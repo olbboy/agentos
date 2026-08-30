@@ -173,7 +173,24 @@ final class AgeOSUISmokeTests: XCTestCase {
             try? FileManager.default.removeItem(atPath: tmp)
         }
 
+        app.activate()
         XCTAssertTrue(sidebarItem(app, "Overview").waitForExistence(timeout: 15))
+
+        // Trao keyboard focus cho sidebar TRƯỚC vòng lặp, bằng cách chọn một hàng
+        // khác hàng mặc định.
+        //
+        // Vì sao cần: lúc mới launch, hàng "Overview" đã được chọn nhưng list chưa có
+        // focus, nên macOS vẽ selection ở kiểu INACTIVE (nền xám nhạt) và audit
+        // `.contrast` — vốn đo pixel thật — báo fail. Click vào chính hàng đang chọn
+        // không trao focus, nên vòng lặp bắt đầu bằng Overview sẽ luôn fail ở lần
+        // đầu và pass ở mọi lần sau. Đó là lý do test này pass khi chạy một mình và
+        // fail trong suite.
+        //
+        // Hệ quả phải nói rõ: test audit trạng thái ACTIVE. Tương phản của selection
+        // lúc INACTIVE do macOS vẽ, app không chọn màu đó — và ép màu chữ ở đây đã
+        // được thử và làm hỏng trạng thái active (xem ContentView).
+        sidebarItem(app, "Diagnostics").click()
+        _ = app.staticTexts["Diagnostics"].waitForExistence(timeout: 10)
 
         for screen in screens {
             let item = sidebarItem(app, screen)

@@ -159,6 +159,15 @@ amber, and red so it never reads as a status. Indigo does that with the smallest
 gap at 96.6 degrees, and it is close enough to the macOS system indigo to sit
 comfortably next to window chrome.
 
+### The accent is the app's global accent
+
+`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME` is set to `accentBrand` in
+`apps/AgeOS/project.yml`. This is not cosmetic. Without it macOS draws selection
+highlights in the default system blue, which nothing here has measured, and the
+`.contrast` audit failed on the selected sidebar row. Pointing the global accent
+at the token that *has* been measured fixed it — verified across three
+consecutive runs of the full UI suite.
+
 ## Usage rules
 
 - **Accent** — active navigation item, selection rule, small data emphasis,
