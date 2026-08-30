@@ -53,9 +53,9 @@ struct McpView: View {
         .navigationTitle("MCP Servers")
         .overlay {
             if model.mcpServers.isEmpty {
-                ContentUnavailableView("No MCP servers yet",
-                                       systemImage: "server.rack",
-                                       description: Text("Add one from the CLI: ageos mcp add <registry-name|file.mcpb>"))
+                EmptyState(icon: "server.rack",
+                           title: "No MCP servers yet",
+                           message: "Add one from the CLI: ageos mcp add <registry-name|file.mcpb>")
             }
         }
     }

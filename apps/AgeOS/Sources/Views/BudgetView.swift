@@ -17,9 +17,9 @@ struct BudgetView: View {
                 }
 
                 if model.budgets.isEmpty {
-                    ContentUnavailableView("Not measured yet",
-                                           systemImage: "gauge.with.needle",
-                                           description: Text("Press Measure budget to run it."))
+                    EmptyState(icon: "gauge.with.needle",
+                               title: "Not measured yet",
+                               message: "Press Measure budget to run it.")
                 } else {
                     methodNote
                 }

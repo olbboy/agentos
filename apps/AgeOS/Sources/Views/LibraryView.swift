@@ -45,13 +45,13 @@ struct LibraryView: View {
             .searchable(text: $query, placement: .automatic, prompt: "Search skills")
             .overlay {
                 if model.skills.isEmpty {
-                    ContentUnavailableView("Library is empty",
-                                           systemImage: "books.vertical",
-                                           description: Text("Add a GitHub source or a local folder to get started."))
+                    EmptyState(icon: "books.vertical",
+                               title: "Library is empty",
+                               message: "Add a GitHub source or a local folder to get started.")
                 } else if filtered.isEmpty {
-                    ContentUnavailableView("Nothing matches",
-                                           systemImage: "line.3.horizontal.decrease.circle",
-                                           description: Text("Clear the search or the filters to see the whole library."))
+                    EmptyState(icon: "line.3.horizontal.decrease.circle",
+                               title: "Nothing matches",
+                               message: "Clear the search or the filters to see the whole library.")
                 }
             }
         }
@@ -100,8 +100,12 @@ struct LibraryView: View {
                   ? "line.3.horizontal.decrease.circle.fill"
                   : "line.3.horizontal.decrease.circle")
         }
+        .accessibilityIdentifier("library.filterMenu")
         .accessibilityLabel("Filter skills")
         .accessibilityValue(filter.isActive ? "filters active" : "no filters")
+        // Audit `.action` báo MenuButton này không phơi hành động nào. Nói rõ nó mở
+        // ra cái gì thay vì để VoiceOver chỉ đọc "menu button".
+        .accessibilityHint("Opens filter options for source, deprecation and enabled state")
     }
 
     // MARK: - Row

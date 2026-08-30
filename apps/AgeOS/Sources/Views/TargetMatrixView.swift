@@ -35,9 +35,9 @@ struct TargetMatrixView: View {
         .navigationTitle("Target Matrix")
         .overlay {
             if model.skills.isEmpty {
-                ContentUnavailableView("No skills in the library yet",
-                                       systemImage: "switch.2",
-                                       description: Text("Go to Library to add a source."))
+                EmptyState(icon: "switch.2",
+                           title: "No skills in the library yet",
+                           message: "Go to Library to add a source.")
             }
         }
         .toolbar {

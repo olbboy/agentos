@@ -94,6 +94,11 @@ struct ContentView: View {
                     }
                 }
             }
+            // Nền đục + màu chữ từ token: sidebar mặc định của macOS dùng vật liệu
+            // trong suốt, và audit `.contrast` đo được chữ trên nền đó KHÔNG đạt.
+            // Đặt nền và màu tường minh là cách duy nhất kiểm soát được tỉ lệ này.
+            .scrollContentBackground(.hidden)
+            .background(Color.ageSurface)
             .navigationSplitViewColumnWidth(min: 190, ideal: 210)
         } detail: {
             switch selection {
@@ -123,6 +128,10 @@ struct ContentView: View {
         Label(destination.rawValue, systemImage: destination.icon)
             .tag(destination)
             .accessibilityLabel(destination.rawValue)
+            // Identifier là địa chỉ ỔN ĐỊNH cho UI test. Nhãn hiển thị là thứ dịch
+            // được và đổi được; hàng sidebar trong List còn không phơi nhãn ra
+            // ngoài cell, nên test không có cách nào bám vào nó cho chắc.
+            .accessibilityIdentifier("sidebar." + destination.rawValue)
     }
 }
 
