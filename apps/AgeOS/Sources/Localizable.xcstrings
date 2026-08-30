@@ -11,8 +11,28 @@
         }
       }
     },
+    "%@ of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ of %2$@"
+          }
+        }
+      }
+    },
     "%lld" : {
 
+    },
+    "%lld %@, %lld%% of the scale, no threshold set" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@, %3$lld%% of the scale, no threshold set"
+          }
+        }
+      }
     },
     "%lld MCP ≈%lld tk" : {
       "localizations" : {
@@ -49,6 +69,16 @@
     "%lld not measured" : {
 
     },
+    "%lld of %lld %@, %lld%% of the scale, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld %3$@, %4$lld%% of the scale, %5$@"
+          }
+        }
+      }
+    },
     "%lld skills ≈%lld tk" : {
       "localizations" : {
         "en" : {
@@ -71,6 +101,16 @@
     },
     "%lld warnings" : {
 
+    },
+    "'%@' is loaded from %lld paths in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "'%1$@' is loaded from %2$lld paths in %3$@"
+          }
+        }
+      }
     },
     "A section title long enough to test how the header wraps" : {
 
@@ -195,6 +235,9 @@
     "Everything healthy" : {
 
     },
+    "Exact duplicate: the same skill exists twice" : {
+
+    },
     "Filter" : {
 
     },
@@ -214,6 +257,9 @@
 
     },
     "Health check %@" : {
+
+    },
+    "Healthy" : {
 
     },
     "How these numbers are produced" : {
@@ -258,6 +304,9 @@
     "MCP servers" : {
 
     },
+    "Marked deprecated: %@" : {
+
+    },
     "Measure" : {
 
     },
@@ -265,6 +314,12 @@
 
     },
     "Measure the budget again" : {
+
+    },
+    "Near duplicate (cosine %@)" : {
+
+    },
+    "Near-duplicate detection did not run on this machine — only exact duplicates were checked" : {
 
     },
     "Never synced" : {
@@ -310,6 +365,9 @@
 
     },
     "Not measured yet. Measuring reads each agent's catalog and estimates its token cost." : {
+
+    },
+    "Note" : {
 
     },
     "Nothing here can be repaired automatically." : {
@@ -417,6 +475,9 @@
     "Top consumers" : {
 
     },
+    "Warning" : {
+
+    },
     "Warnings" : {
 
     },
@@ -424,6 +485,9 @@
 
     },
     "a very long status label that should truncate cleanly" : {
+
+    },
+    "about %lld tokens" : {
 
     },
     "agents detected" : {
@@ -439,6 +503,9 @@
 
     },
     "filters active" : {
+
+    },
+    "from %@" : {
 
     },
     "loaded in 2+ agents" : {
@@ -468,10 +535,19 @@
     "on" : {
 
     },
+    "over the threshold" : {
+
+    },
     "over threshold" : {
 
     },
     "plaintext env: %@" : {
+
+    },
+    "under the threshold" : {
+
+    },
+    "version %@" : {
 
     }
   },

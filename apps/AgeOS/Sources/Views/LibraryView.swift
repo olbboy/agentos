@@ -151,11 +151,13 @@ struct LibraryView: View {
     /// VoiceOver không thấy được màu hay icon.
     private func spokenRow(_ skill: IndexDB.SkillRow,
                            tokens: Int?, enabledCount: Int) -> String {
-        var parts = ["from \(skill.sourceId)", "version \(skill.version)"]
-        if let tokens { parts.append("about \(tokens) tokens") }
-        parts.append(enabledCount == 0 ? "not enabled anywhere"
-                                       : "enabled in \(enabledCount) agents")
-        if skill.deprecated { parts.append("deprecated") }
+        var parts = [String(localized: "from \(skill.sourceId)"),
+                     String(localized: "version \(skill.version)")]
+        if let tokens { parts.append(String(localized: "about \(tokens) tokens")) }
+        parts.append(enabledCount == 0
+                     ? String(localized: "not enabled anywhere")
+                     : String(localized: "enabled in \(enabledCount) agents"))
+        if skill.deprecated { parts.append(String(localized: "deprecated")) }
         return parts.joined(separator: ", ")
     }
 

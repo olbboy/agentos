@@ -15,7 +15,7 @@ struct StatTile: View {
     var action: (() -> Void)? = nil
 
     private var spokenValue: String {
-        outOf.map { "\(value) of \($0)" } ?? value
+        outOf.map { String(localized: "\(value) of \($0)") } ?? value
     }
 
     var body: some View {

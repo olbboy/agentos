@@ -57,10 +57,12 @@ struct RatioMeter: View {
     private var spokenValue: String {
         let pct = Int((geometry.fill * 100).rounded())
         guard let threshold else {
-            return "\(value) \(unit), \(pct)% of the scale, no threshold set"
+            return String(localized: "\(value) \(unit), \(pct)% of the scale, no threshold set")
         }
-        let verdict = geometry.isOver ? "over the threshold" : "under the threshold"
-        return "\(value) of \(threshold) \(unit), \(pct)% of the scale, \(verdict)"
+        let verdict = geometry.isOver
+            ? String(localized: "over the threshold")
+            : String(localized: "under the threshold")
+        return String(localized: "\(value) of \(threshold) \(unit), \(pct)% of the scale, \(verdict)")
     }
 
     var body: some View {

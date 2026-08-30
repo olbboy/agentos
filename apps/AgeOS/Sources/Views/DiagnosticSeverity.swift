@@ -88,6 +88,13 @@ extension DiagnosticSeverity {
 /// để chúng báo hai con số khác nhau.
 enum DiagnosticsBuilder {
 
+    /// RANH GIỚI dịch thuật ở đây:
+    ///
+    /// - Thông điệp do **app** viết → `String(localized:)`, vào String Catalog.
+    /// - Thông điệp do **core** phát (`Doctor.Finding.message`, lint message,
+    ///   `ScanReport.notes`) → đi thẳng, KHÔNG bọc. Chúng là dữ liệu chạy qua, và
+    ///   core không có hạ tầng i18n; bọc chúng chỉ tạo ra hàng trăm key rác trong
+    ///   catalog mà không key nào dịch được vì nội dung sinh lúc chạy.
     static func build(doctorFindings: [Doctor.Finding],
                       scanReport: ScanEngine.ScanReport?,
                       inventory: EffectiveLoadScanner.Inventory?) -> [DiagnosticItem] {
@@ -110,16 +117,17 @@ enum DiagnosticsBuilder {
                     id: "exact-\(i)",
                     // Hai bản y hệt nhau thì chắc chắn đang lãng phí, không phải "có thể".
                     severity: .error,
-                    message: "Exact duplicate: the same skill exists twice",
+                    message: String(localized: "Exact duplicate: the same skill exists twice"),
                     detail: "\(p.a)  ·  \(p.b)",
                     status: "No automatic fix",
                     source: .exactDupe(p)))
             }
             for (i, p) in report.nearDupes.enumerated() {
+                let score = String(format: "%.2f", p.score)
                 items.append(DiagnosticItem(
                     id: "near-\(i)",
                     severity: .warning,
-                    message: "Near duplicate (cosine \(String(format: "%.2f", p.score)))",
+                    message: String(localized: "Near duplicate (cosine \(score))"),
                     detail: "\(p.a)  ·  \(p.b)",
                     status: "No automatic fix",
                     source: .nearDupe(p)))
@@ -128,7 +136,7 @@ enum DiagnosticsBuilder {
                 items.append(DiagnosticItem(
                     id: "deprecated-\(item.id)",
                     severity: .warning,
-                    message: "Marked deprecated: \(item.reason)",
+                    message: String(localized: "Marked deprecated: \(item.reason)"),
                     detail: item.id,
                     status: "Action required",
                     source: .deprecated(item)))
@@ -165,7 +173,7 @@ enum DiagnosticsBuilder {
                 items.append(DiagnosticItem(
                     id: "note-neardupe",
                     severity: .warning,
-                    message: "Near-duplicate detection did not run on this machine — only exact duplicates were checked",
+                    message: String(localized: "Near-duplicate detection did not run on this machine — only exact duplicates were checked"),
                     detail: nil,
                     status: "Not checked",
                     source: .scanNote("nearDupeUnavailable")))
@@ -178,7 +186,7 @@ enum DiagnosticsBuilder {
                     items.append(DiagnosticItem(
                         id: "duppath-\(agent.adapterId)-\(name)",
                         severity: .warning,
-                        message: "'\(name)' is loaded from \(paths.count) paths in \(agent.adapterId)",
+                        message: String(localized: "'\(name)' is loaded from \(paths.count) paths in \(agent.adapterId)"),
                         detail: paths.joined(separator: "  ·  "),
                         status: "Action required",
                         source: .duplicatePath(adapterId: agent.adapterId,

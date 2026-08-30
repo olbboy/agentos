@@ -74,11 +74,11 @@ struct FindingRow: View {
 
     private var severityWord: String {
         switch severity {
-        case .danger:  "Error"
-        case .warning: "Warning"
-        case .info:    "Info"
-        case .success: "Healthy"
-        case .neutral: "Note"
+        case .danger:  String(localized: "Error")
+        case .warning: String(localized: "Warning")
+        case .info:    String(localized: "Info")
+        case .success: String(localized: "Healthy")
+        case .neutral: String(localized: "Note")
         }
     }
 }
