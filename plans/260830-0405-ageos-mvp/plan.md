@@ -52,7 +52,7 @@ Phụ thuộc: 3←(1,2) · 4←(1,2) · 5←(3,4) · 6←5 · 7←6. Phase 2 c�
 - [x] Enable 1 MCP server (HelloMCP spike) cho Claude Code + Claude Desktop + Grok thật: đúng format từng app, backup mili-giây, disable xong diff GIỐNG HỆT backup; `ageos mcp health` handshake pass (22ms)
 - [x] Scan máy thật bắt 18 cặp exact-dupe + 16 near-dupe cài sẵn; repo archived → deprecated (unit test; near-dupe calibrated không false-positive trên cặp khác nghĩa)
 - [x] `ageos budget --target claude-code` = ≈9,992 tokens/136 skills + cảnh báo ngưỡng + cảnh báo MCP chưa đo; đối chiếu /context thủ công ghi trong CLI output (±20%)
-- [x] Flow `search_skills → install_skill → enable_skill` qua ageos-mcp pass loopback E2E (đúng protocol Claude Code); ageos-mcp đã dogfood-register vào ~/.claude.json — bước gọi từ session Claude Code mới do user xác nhận (nested claude -p bị chặn OAuth headless, spike report)
+- [x] Flow `search_skills → install_skill → enable_skill` qua ageos-mcp pass loopback E2E; VÀ đã gọi thành công `list_targets` + `budget_report` TỪ SESSION CLAUDE CODE THẬT (30/8 07:52 — server dogfood tự load vào session, trả 6 adapter + budget 10,450 tokens) — acceptance khép trọn
 - [x] Disable/remove sạch idempotent (lockfile về 0, agent dir nguyên trạng); mọi file user được bảo vệ bằng conflict-check + marker (test + máy thật)
 - [ ] Repo public: MIT/README/CONTRIBUTING/SECURITY/CI/cask ĐÃ SẴN local — publish (push, tap, tag v0.1.0) chờ quyết định user (xem docs/deployment-guide.md checklist)
 

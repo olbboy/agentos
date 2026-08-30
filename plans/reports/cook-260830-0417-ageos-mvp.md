@@ -48,7 +48,7 @@ Báo cáo đầy đủ: `plans/reports/tester-260830-0546-mvp-verification.md`. 
 
 ## Blocked / cần user
 1. **Publish v0.1.0**: chốt GitHub owner + bundle id, push repo public (secret-scan trước), tap cask, tag. Checklist: `docs/deployment-guide.md`.
-2. **Nested `claude -p` OAuth expired** (môi trường headless) → 2 verify thủ công còn lại: (a) gọi ageos-mcp tools từ session Claude Code MỚI (đã register sẵn), (b) đối chiếu budget vs `/context`.
+2. ~~Gọi ageos-mcp từ session Claude Code thật~~ — **ĐÃ XONG 30/8 07:52**: server dogfood tự load vào session, `list_targets` + `budget_report` trả đúng qua đường MCP thật. Còn lại 1 verify thủ công: đối chiếu `ageos budget` vs `/context`.
 3. **TCC bootstrap cho xcodebuild test** (1 lần, persistent): bật Developer Tools cho **/Applications/Claude.app** (xác nhận qua ancestry-walk; agent chẩn đoán độc lập corroborate root cause kTCCServiceDeveloperTool silent-deny) — pane: `open "x-apple.systempreferences:com.apple.preference.security?Privacy_DeveloperTool"`; sau đó AgeOSUITests sẽ hỏi thêm Automation (gate thứ 2, approve interactive).
 4. **Commit**: repo đã `git init`, 0 commit — chờ user gật (đề xuất conventional commits theo phase hoặc 1 commit `feat: AgeOS MVP`).
 
