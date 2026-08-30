@@ -11,7 +11,7 @@ cask "ageos" do
   desc "One library for Agent Skills and MCP servers, distributed to every coding agent"
   homepage "https://github.com/olbboy/agentos"
 
-  depends_on macos: ">= :tahoe"
+  depends_on macos: :tahoe
 
   app "AgeOS.app"
 
