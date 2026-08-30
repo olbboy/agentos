@@ -8,3 +8,4 @@ DerivedData/
 *.profraw
 apps/AgeOS/AgeOS.xcodeproj/
 dist/
+completions/
