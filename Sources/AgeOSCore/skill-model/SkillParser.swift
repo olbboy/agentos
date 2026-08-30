@@ -2,9 +2,9 @@ import Foundation
 import Markdown
 import Yams
 
-/// Parse SKILL.md: tách YAML frontmatter (Yams) + body Markdown (swift-markdown).
+/// Parses SKILL.md: YAML frontmatter (Yams) plus a Markdown body (swift-markdown).
 public enum SkillParser {
-    /// Parse từ thư mục skill (phải chứa SKILL.md).
+    /// Parses from a skill directory (which must contain SKILL.md).
     public static func parse(directory: URL) throws -> ParsedSkill {
         let file = directory.appendingPathComponent("SKILL.md")
         guard let data = FileManager.default.contents(atPath: file.path) else {
@@ -26,7 +26,7 @@ public enum SkillParser {
 
     // MARK: - Frontmatter
 
-    /// Frontmatter = khối giữa `---` dòng đầu tiên và `---` kế tiếp.
+    /// The frontmatter is the block between the leading `---` and the next `---`.
     static func splitFrontmatter(_ text: String, file: URL) throws -> (yaml: String, body: String) {
         let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
         guard normalized.hasPrefix("---\n") || normalized == "---" else {

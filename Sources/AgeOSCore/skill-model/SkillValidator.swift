@@ -1,7 +1,7 @@
 import Foundation
 
-/// Validate cấu trúc theo spec agentskills.io. Chỉ bắt lỗi CHẶN (structural);
-/// style/chất lượng description thuộc DescriptionLinter (Phase 5).
+/// Validates structure against the agentskills.io spec. It only catches BLOCKING
+/// (structural) problems; description style and quality belong to DescriptionLinter.
 public enum SkillValidator {
     public struct Issue: Sendable, Equatable, CustomStringConvertible {
         public enum Severity: String, Sendable { case error, warning }
@@ -34,8 +34,9 @@ public enum SkillValidator {
         if m.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             issues.append(.init(severity: .error, message: "Missing required field `description` in the frontmatter"))
         } else if m.description.count > 1024 {
-            // Warning chứ không error: agent thật (Claude Code) vẫn load skill vượt 1024
-            // (vd anthropics/skills/claude-api = 1068 chars) — manager không được nghiêm hơn agent.
+            // A warning rather than an error: real agents (Claude Code) still load skills
+            // past 1024 (anthropics/skills/claude-api is 1068 chars) — a manager must not be
+            // stricter than the agent it serves.
             issues.append(.init(severity: .warning, message: "`description` is \(m.description.count) characters, over the 1024 limit (agentskills.io spec) — consider shortening"))
         }
 
@@ -46,7 +47,7 @@ public enum SkillValidator {
         return issues
     }
 
-    /// Ném lỗi nếu có issue mức error.
+    /// Throws if any issue is at error level.
     public static func requireValid(_ skill: ParsedSkill) throws {
         let errors = validate(skill).filter { $0.severity == .error }
         guard errors.isEmpty else {

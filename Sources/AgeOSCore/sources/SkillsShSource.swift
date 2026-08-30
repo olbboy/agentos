@@ -1,8 +1,8 @@
 import Foundation
 
-/// Search index skills.sh (API đo thực tế 30/8/2026:
+/// The skills.sh search index (API measured on 2026-08-30:
 /// `GET https://skills.sh/api/search?q=<q>` → {skills: [{id, skillId, name, installs, source}]}).
-/// Nguồn optional: API đổi/sập → degrade im lặng trả rỗng (doctor note), không chặn flow.
+/// An optional source: if the API changes or goes down it degrades silently to empty (with a doctor note) rather than blocking anything.
 public struct SkillsShSource: Sendable {
     let http: HTTPClient
     public static let baseURL = "https://skills.sh"
@@ -12,11 +12,11 @@ public struct SkillsShSource: Sendable {
     }
 
     public struct Hit: Sendable, Codable, Equatable {
-        /// `owner/repo/skill-name` — trùng format id của AgeOS store.
+        /// `owner/repo/skill-name` — the same id format the AgeOS store uses.
         public var id: String
         public var name: String
         public var installs: Int
-        /// `owner/repo` — add được ngay bằng `ageos source add`.
+        /// `owner/repo` — addable directly with `ageos source add`.
         public var source: String
     }
 
@@ -30,7 +30,7 @@ public struct SkillsShSource: Sendable {
         }
     }
 
-    /// Trả [] khi API lỗi/đổi schema — caller không cần try/catch.
+    /// Returns [] when the API errors or changes schema — callers need no try/catch.
     public func search(_ query: String, limit: Int = 20) async -> [Hit] {
         var components = URLComponents(string: "\(Self.baseURL)/api/search")!
         components.queryItems = [.init(name: "q", value: query)]
@@ -44,11 +44,11 @@ public struct SkillsShSource: Sendable {
                 return Hit(id: id, name: name, installs: hit.installs ?? 0, source: hit.source ?? "")
             }
         } catch {
-            return [] // degrade im lặng theo thiết kế
+            return [] // degrade silently, by design
         }
     }
 
-    /// Install-count cho 1 skill id chính xác (quality signal) — nil nếu không tìm thấy.
+    /// The install count for one exact skill id (a quality signal) — nil when not found.
     public func installCount(skillId: String) async -> Int? {
         let name = skillId.split(separator: "/").last.map(String.init) ?? skillId
         let hits = await search(name)

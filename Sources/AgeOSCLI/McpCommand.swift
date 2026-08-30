@@ -241,7 +241,7 @@ struct McpCommand: AsyncParsableCommand {
                 let engine = try CLIRuntime.makeEngine()
                 let manager = try McpCommand.makeManager(engine)
                 let report = try manager.health(query: server, timeout: TimeInterval(timeout))
-                // Ghi kết quả vào index để Budget Meter dùng schema tokens.
+                // Record the result in the index so the Budget Meter can use the schema tokens.
                 if let model = try? manager.library.find(server) {
                     try? engine.index.recordMcpHealth(entryName: model.name, report: report)
                 }

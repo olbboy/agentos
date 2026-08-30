@@ -2,9 +2,9 @@ import Foundation
 import MCP
 import AgeOSCore
 
-/// `ageos-mcp` — MCP server stdio để AGENT tự quản skill/MCP qua AgeOS core.
-/// Description tool cố tình NGẮN: chính server này cũng bị Budget Meter đo,
-/// phải làm gương về chi phí catalog.
+/// `ageos-mcp` — an MCP stdio server that lets an AGENT manage skills and MCP servers through AgeOS core.
+/// The tool descriptions are deliberately SHORT: this server is measured by the Budget Meter
+/// too, and it should set an example on catalog cost.
 @main
 struct AgeosMcpMain {
     static func main() async throws {

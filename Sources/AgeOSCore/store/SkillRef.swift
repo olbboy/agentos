@@ -1,8 +1,8 @@
 import Foundation
 
-/// Định danh skill toàn cục: `<namespace>/<name>`.
-/// Namespace theo nguồn — GitHub: `owner/repo`, local: `local/<slug>` — nên
-/// hai repo khác nhau có skill trùng tên vẫn không đè nhau trong store.
+/// A globally unique skill identity: `<namespace>/<name>`.
+/// The namespace follows the source — GitHub: `owner/repo`, local: `local/<slug>` — so two
+/// different repos holding a same-named skill still cannot overwrite each other in the store.
 public struct SkillRef: Sendable, Hashable, Codable, CustomStringConvertible {
     public let namespace: String
     public let name: String
@@ -12,7 +12,7 @@ public struct SkillRef: Sendable, Hashable, Codable, CustomStringConvertible {
         self.name = name
     }
 
-    /// Parse id dạng `a/b/name` (github) hoặc `local/x/name`.
+    /// Parses an id shaped `a/b/name` (github) or `local/x/name`.
     public init?(id: String) {
         let parts = id.split(separator: "/").map(String.init)
         guard parts.count >= 2 else { return nil }
@@ -23,6 +23,6 @@ public struct SkillRef: Sendable, Hashable, Codable, CustomStringConvertible {
     public var id: String { "\(namespace)/\(name)" }
     public var description: String { id }
 
-    /// Các thành phần path tương đối trong `library/skills/`.
+    /// The relative path components inside `library/skills/`.
     public var pathComponents: [String] { namespace.split(separator: "/").map(String.init) + [name] }
 }

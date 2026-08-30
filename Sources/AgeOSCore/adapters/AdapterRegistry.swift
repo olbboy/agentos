@@ -1,12 +1,13 @@
 import Foundation
 
-/// Nạp adapter: bundled (đóng gói theo app) → override bởi `~/.ageos/adapters/*.json`
-/// (trùng id thì user thắng). User vá path một agent mà không đợi release.
+/// Loads adapters: bundled (shipped with the app), then overridden by
+/// `~/.ageos/adapters/*.json` (a matching id means the user wins). That lets someone patch
+/// an agent's paths without waiting for a release.
 public struct AdapterRegistry: Sendable {
     public let adapters: [AdapterSpec]
 
-    /// `includeBundled: false` → chỉ nạp adapter từ `~/.ageos/adapters/` — dùng cho test
-    /// để mọi path đều nằm trong fake home, không bao giờ chạm thư mục agent thật.
+    /// `includeBundled: false` → load only adapters from `~/.ageos/adapters/`. Used by tests
+    /// so every path stays inside the fake home and never touches a real agent folder.
     public init(home: AgeOSHome, includeBundled: Bool = true) throws {
         var byId: [String: AdapterSpec] = [:]
         let decoder = JSONDecoder()
@@ -16,7 +17,7 @@ public struct AdapterRegistry: Sendable {
                 let spec = try decoder.decode(AdapterSpec.self, from: Data(contentsOf: url))
                 byId[spec.id] = spec
             } catch {
-                // Spec bundled hỏng là lỗi build của chính AgeOS — ném để CI bắt.
+                // A malformed bundled spec is a build error in AgeOS itself — throw so CI catches it.
                 throw AgeOSError(.configUnreadable, "Bundled adapter is malformed \(url.lastPathComponent): \(error)")
             }
         }
@@ -30,7 +31,7 @@ public struct AdapterRegistry: Sendable {
                         throw AgeOSError(.unsupported, "Adapter \(url.lastPathComponent) declares schemaVersion \(spec.schemaVersion), which is not supported",
                                          remedy: "This AgeOS understands schemaVersion 1 — update AgeOS, or fix the file")
                     }
-                    byId[spec.id] = spec // user override thắng
+                    byId[spec.id] = spec // the user override wins
                 } catch let e as AgeOSError {
                     throw e
                 } catch {
@@ -59,7 +60,7 @@ public struct AdapterRegistry: Sendable {
         return found
     }
 
-    /// Adapter phát hiện được trên máy (để `targets list` và adopt scan).
+    /// Adapters detected on this machine (for `targets list` and the adopt scan).
     public func detected() -> [AdapterSpec] {
         adapters.filter { $0.isDetected() }
     }

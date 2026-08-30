@@ -1,11 +1,11 @@
 import Foundation
 
-/// Layout thư mục gốc `~/.ageos/`. Mọi path đi qua đây; test đặt `AGEOS_HOME`
-/// để không đụng home thật — vì vậy KHÔNG bao giờ hardcode `~` ở nơi khác.
+/// The layout of the root `~/.ageos/` directory. Every path goes through here; tests set
+/// `AGEOS_HOME` so they never touch the real home — which is why `~` is NEVER hardcoded elsewhere.
 public struct AgeOSHome: Sendable {
     public let root: URL
 
-    /// Thứ tự ưu tiên: tham số tường minh > env `AGEOS_HOME` > `~/.ageos`.
+    /// Precedence: an explicit argument > the `AGEOS_HOME` env var > `~/.ageos`.
     public init(root: URL? = nil, environment: [String: String] = ProcessInfo.processInfo.environment) {
         if let root {
             self.root = root
@@ -26,14 +26,14 @@ public struct AgeOSHome: Sendable {
     public var sourcesPath: URL { root.appendingPathComponent("sources.json") }
     public var lockfilePath: URL { root.appendingPathComponent("ageos.lock.json") }
 
-    /// Tạo đủ cây thư mục (idempotent).
+    /// Creates the whole directory tree (idempotent).
     public func ensureLayout() throws {
         for dir in [root, libraryDir, skillsLibraryDir, mcpLibraryDir, backupsDir, adaptersDir, cacheDir] {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         }
     }
 
-    /// Expand path dạng `~/...` hoặc tuyệt đối thành URL (dùng cho adapter spec).
+    /// Expands a `~/...` or absolute path into a URL (used for adapter specs).
     public static func expand(_ path: String) -> URL {
         URL(fileURLWithPath: (path as NSString).expandingTildeInPath, isDirectory: true)
     }

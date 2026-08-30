@@ -1,7 +1,7 @@
 import Foundation
 
-/// Điều phối MCP: add (registry/.mcpb/manual) → enable vào client (backup + parse-merge)
-/// → health → disable/restore. Mọi đường ghi config đi qua đúng một chỗ này.
+/// Orchestrates MCP: add (registry, .mcpb or manual) → enable into a client (backup plus
+/// parse-merge) → health → disable and restore. Every config write goes through this one place.
 public struct McpManager: Sendable {
     public let home: AgeOSHome
     public let adapters: AdapterRegistry
@@ -97,7 +97,7 @@ public struct McpManager: Sendable {
         entry.targets[key] = .init(scope: scope, linkMode: .config, path: file.path)
         lockAfter.mcpServers[model.id] = entry
         try lockAfter.save(to: home.lockfilePath)
-        try library.upsert(model) // nhớ env đã điền (plaintext MVP — Keychain v1.1)
+        try library.upsert(model) // remember the env that was filled in (plaintext at MVP — Keychain in v1.1)
 
         var note: String?
         if !model.sensitiveEnvKeys.isEmpty {
@@ -144,10 +144,10 @@ public struct McpManager: Sendable {
                           sensitiveEnv: [], note: nil)
     }
 
-    // MARK: - Remove khỏi library
+    // MARK: - Removal from the library
 
-    /// Gỡ hẳn model khỏi library. TỪ CHỐI khi server còn enabled ở bất kỳ client nào
-    /// (lockfile còn targets) — buộc disable trước để không mồ côi entry trong config client.
+    /// Removes a model from the library entirely. REFUSES while the server is still enabled on
+    /// any client (the lockfile still has targets) — disable first, so no entry is orphaned in a client config.
     public func removeFromLibrary(query: String) throws -> McpServerModel {
         let model = try library.find(query)
         let lock = try Lockfile.load(from: home.lockfilePath)

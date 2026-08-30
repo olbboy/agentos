@@ -1,8 +1,8 @@
 import Foundation
 import CryptoKit
 
-/// Copy mode cho agent không ăn symlink (codex): copy + manifest hash từng file
-/// để (1) sync khi version đổi, (2) phát hiện user sửa tay (drift) mà không ghi đè ẩu.
+/// Copy mode for agents that ignore symlinks (codex): copy the files plus a per-file hash
+/// manifest, so we can (1) re-sync when a version changes and (2) detect hand edits without overwriting them.
 public enum CopySync {
     public static let manifestName = ".ageos-manifest.json"
     static let ignoredFiles: Set<String> = [manifestName, ".DS_Store"]
@@ -10,7 +10,7 @@ public enum CopySync {
     public struct Manifest: Sendable, Codable, Equatable {
         public var skillId: String
         public var version: String
-        /// path tương đối → sha256 hex.
+        /// relative path → sha256 hex.
         public var files: [String: String]
     }
 
@@ -39,7 +39,7 @@ public enum CopySync {
         return result
     }
 
-    /// Copy nội dung skill vào `destination` (thay thế nếu đã tồn tại) + ghi manifest + marker.
+    /// Copies the skill's contents into `destination` (replacing it if present), writing the manifest and marker.
     public static func copy(from source: URL, to destination: URL, skillId: String, version: String) throws {
         let fm = FileManager.default
         let resolvedSource = source.resolvingSymlinksInPath()
@@ -67,7 +67,7 @@ public enum CopySync {
         return try? JSONDecoder().decode(Manifest.self, from: data)
     }
 
-    /// So hiện trạng trên đĩa với manifest — khác biệt = user đã sửa tay.
+    /// Compares what is on disk against the manifest — any difference means the user edited it.
     public static func drift(at dir: URL) -> Drift? {
         guard let manifest = readManifest(at: dir) else { return nil }
         let current = hashFiles(in: dir)

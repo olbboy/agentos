@@ -1,8 +1,8 @@
 import Foundation
 import FoundationModels
 
-/// Chấm 0-100 heuristic KÈM giải trình từng tiêu chí (không điểm đen hộp).
-/// Snapshot tests khóa điểm để chống drift ngẫu nhiên.
+/// Scores 0-100 heuristically WITH a per-criterion explanation (no black-box number).
+/// Snapshot tests pin the scores to catch accidental drift.
 public struct QualityScorer: Sendable {
     public init() {}
 
@@ -41,7 +41,7 @@ public struct QualityScorer: Sendable {
         var criteria: [Score.Criterion] = []
         let m = input.parsed.manifest
 
-        // 1. Metadata đầy đủ (tối đa 20)
+        // 1. Complete metadata (up to 20)
         var meta = 0
         var metaNotes: [String] = []
         if !m.name.isEmpty { meta += 5 } else { metaNotes.append("no name") }
@@ -51,13 +51,13 @@ public struct QualityScorer: Sendable {
         criteria.append(.init(name: "metadata", points: meta, max: 20,
                               note: metaNotes.isEmpty ? "complete" : metaNotes.joined(separator: ", ")))
 
-        // 2. Description lint (tối đa 20)
+        // 2. Description lint (up to 20)
         let lintFindings = DescriptionLinter.lint(name: m.name, description: m.description)
         let lintPoints = max(0, 20 - lintFindings.count * 7)
         criteria.append(.init(name: "description-lint", points: lintPoints, max: 20,
                               note: lintFindings.isEmpty ? "clean" : lintFindings.map(\.rule.rawValue).joined(separator: ", ")))
 
-        // 3. Cấu trúc tài nguyên (tối đa 15)
+        // 3. Resource structure (up to 15)
         var structure = 0
         var structNotes: [String] = []
         if let dir = Optional(input.parsed.directory) {
@@ -72,12 +72,12 @@ public struct QualityScorer: Sendable {
         criteria.append(.init(name: "resources", points: structure, max: 15,
                               note: structNotes.isEmpty ? "SKILL.md only" : structNotes.joined(separator: ", ")))
 
-        // 4. Body chất lượng (tối đa 10)
+        // 4. Body quality (up to 10)
         let bodyLen = input.parsed.body.count
         let bodyPoints = bodyLen >= 2000 ? 10 : (bodyLen >= 500 ? 7 : (bodyLen >= 100 ? 4 : 0))
         criteria.append(.init(name: "body", points: bodyPoints, max: 10, note: "\(bodyLen) characters of instructions"))
 
-        // 5. Upstream tín nhiệm (tối đa 25: stars 15 + freshness 10)
+        // 5. Upstream trust (up to 25: stars 15, freshness 10)
         var stars = 0
         if let s = input.sourceStars {
             stars = s >= 1000 ? 15 : (s >= 100 ? 12 : (s >= 10 ? 8 : (s >= 1 ? 4 : 0)))
@@ -94,7 +94,7 @@ public struct QualityScorer: Sendable {
             criteria.append(.init(name: "freshness", points: 0, max: 10, note: "unknown"))
         }
 
-        // 6. Cộng đồng skills.sh (tối đa 10)
+        // 6. skills.sh community signal (up to 10)
         var installs = 0
         if let c = input.installCount {
             installs = c >= 1000 ? 10 : (c >= 100 ? 7 : (c >= 10 ? 4 : 1))
@@ -122,10 +122,10 @@ public struct QualityScorer: Sendable {
         ("productivity", ["workflow", "automation", "schedule", "email", "calendar", "note"]),
     ]
 
-    /// Phân loại sync (dùng trong score snapshot-được): luôn keyword.
-    /// Máy bật Apple Intelligence sẽ được refine bằng `classifyWithFoundationModels`
-    /// ở tầng CLI/scan (async); máy này (spike 30/8: appleIntelligenceNotEnabled)
-    /// chạy "heuristic mode" và UI phải ghi rõ như vậy.
+    /// Synchronous classification (used in the snapshot-able score): always keyword-based.
+    /// A machine with Apple Intelligence enabled gets this refined by
+    /// `classifyWithFoundationModels` at the CLI/scan layer (async); a machine without it
+    /// runs in "heuristic mode", and the UI has to say so.
     static func classify(name: String, description: String) -> (String, String) {
         let label = keywordClassify(name: name, description: description)
         if case .available = SystemLanguageModel.default.availability {
@@ -134,8 +134,8 @@ public struct QualityScorer: Sendable {
         return (label, "keyword (heuristic mode)")
     }
 
-    /// Refine phân loại bằng on-device FoundationModels (chỉ khi availability == available).
-    /// Prompt cố định, chỉ chấp nhận nhãn trong taxonomy — trả nil khi FM tắt/lỗi/nhãn lạ.
+    /// Refines the classification with on-device FoundationModels (only when availability == available).
+    /// A fixed prompt, accepting only labels in the taxonomy — returns nil when FM is off, errors, or answers off-list.
     public static func classifyWithFoundationModels(name: String, description: String) async -> String? {
         guard case .available = SystemLanguageModel.default.availability else { return nil }
         let labels = taxonomy.map(\.label) + ["other"]

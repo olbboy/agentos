@@ -1,10 +1,10 @@
 import Foundation
 
 /// Store content-addressed theo version:
-/// `library/skills/<ns>/<name>/<version>/` + symlink `current` → version đang dùng.
+/// `library/skills/<ns>/<name>/<version>/` plus a `current` symlink → the version in use.
 ///
-/// Vì mọi adapter link vào `current`, swap version = 1 lần thay symlink atomic
-/// → mọi target symlink "ăn theo" bản mới ngay, không cần đụng từng agent.
+/// Because every adapter links to `current`, swapping a version is one atomic symlink change
+/// → every symlinked target follows the new build at once, with no per-agent work.
 public struct Store: Sendable {
     public let home: AgeOSHome
     private var fm: FileManager { .default }
@@ -21,13 +21,13 @@ public struct Store: Sendable {
         skillDir(ref).appendingPathComponent(safeVersion(version), isDirectory: true)
     }
 
-    /// Symlink `current` — LinkEngine (Phase 3) luôn trỏ vào đây, không trỏ version cụ thể.
+    /// The `current` symlink — LinkEngine always points here, never at a specific version.
     public func currentLink(_ ref: SkillRef) -> URL {
         skillDir(ref).appendingPathComponent("current")
     }
 
-    /// Cài một version từ thư mục staging (copy vào tmp cùng volume rồi rename — atomic).
-    /// Idempotent: version đã tồn tại thì giữ nguyên (content-addressed).
+    /// Installs a version from a staging directory (copy to a temp on the same volume, then rename — atomic).
+    /// Idempotent: an already-present version is left alone (content-addressed).
     @discardableResult
     public func installVersion(_ ref: SkillRef, version: String, from staging: URL) throws -> URL {
         let dest = versionDir(ref, version: version)
@@ -40,14 +40,14 @@ public struct Store: Sendable {
             try fm.moveItem(at: tmp, to: dest)
         } catch {
             _ = try? fm.removeItem(at: tmp)
-            // Race hai tiến trình cùng cài: bên kia thắng cũng là thành công.
+            // Two processes installing at once: the other one winning is also success.
             if fm.fileExists(atPath: dest.path) { return dest }
             throw error
         }
         return dest
     }
 
-    /// Trỏ `current` sang version (symlink tương đối để store di chuyển được).
+    /// Points `current` at a version (a relative symlink, so the store stays movable).
     public func setCurrent(_ ref: SkillRef, version: String) throws {
         let dest = versionDir(ref, version: version)
         guard fm.fileExists(atPath: dest.path) else {
@@ -67,11 +67,11 @@ public struct Store: Sendable {
         return entries.filter { $0 != "current" && !$0.hasPrefix(".") }.sorted()
     }
 
-    /// Mọi skill có mặt trong store (dò symlink `current` — nguồn chân lý là filesystem).
+    /// Every skill present in the store (found by following `current` symlinks — the filesystem is the truth).
     public func listInstalled() -> [(ref: SkillRef, version: String)] {
         var result: [(SkillRef, String)] = []
-        // Resolve cả hai phía trước khi so prefix: enumerator trả path đã resolve
-        // (/private/var/...) trong khi root có thể là dạng symlink (/var/...).
+        // Resolve both sides before comparing prefixes: the enumerator returns resolved paths
+        // (/private/var/...) while root may still be in symlink form (/var/...).
         let root = home.skillsLibraryDir.resolvingSymlinksInPath()
         guard let walker = fm.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey],
                                          options: [.skipsHiddenFiles]) else { return [] }
@@ -89,7 +89,7 @@ public struct Store: Sendable {
         return result.sorted { $0.0.id < $1.0.id }
     }
 
-    /// Xóa version mồ côi: không phải `current` và không nằm trong `keep`.
+    /// Removes orphaned versions: not `current`, and not listed in `keep`.
     @discardableResult
     public func gcOrphans(_ ref: SkillRef, keep: Set<String> = []) throws -> [String] {
         let current = currentVersion(ref)
@@ -101,15 +101,15 @@ public struct Store: Sendable {
         return removed
     }
 
-    /// Gỡ hẳn skill khỏi store (mọi version + current).
+    /// Removes a skill from the store entirely (every version plus current).
     public func remove(_ ref: SkillRef) throws {
         let dir = skillDir(ref)
         guard fm.fileExists(atPath: dir.path) else { return }
         try fm.removeItem(at: dir)
     }
 
-    /// Version dùng làm tên thư mục — chặn ký tự lạ (path traversal, `/`),
-    /// gọt chuỗi ".." và dấu chấm đầu (tránh hidden dir bị enumerator bỏ qua).
+    /// The version doubles as a directory name — reject odd characters (path traversal, `/`),
+    /// strip ".." and a leading dot (so the enumerator does not skip it as a hidden directory).
     private func safeVersion(_ version: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(.init(charactersIn: ".-_"))
         var cleaned = String(version.unicodeScalars.filter { allowed.contains($0) })

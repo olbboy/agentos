@@ -1,7 +1,7 @@
 import Foundation
 
-/// Điều phối: source.fetch → store.install → setCurrent → index.upsert.
-/// Filesystem là source of truth; index chỉ là cache.
+/// The orchestrator: source.fetch → store.install → setCurrent → index.upsert.
+/// The filesystem is the source of truth; the index is only a cache.
 public struct SyncEngine: Sendable {
     public let home: AgeOSHome
     public let store: Store
@@ -26,11 +26,11 @@ public struct SyncEngine: Sendable {
         public var skippedCount: Int
         public var skippedDetails: [String]
         public var archived: Bool
-        /// Target copy-mode bị bỏ qua vì user sửa tay (drift) — cần `doctor --fix` hoặc --force.
+        /// A copy-mode target skipped because the user edited it (drift) — needs `doctor --fix` or --force.
         public var driftWarnings: [String]
     }
 
-    /// Sync một nguồn hoặc tất cả (`sourceId == nil`).
+    /// Syncs one source, or all of them when `sourceId == nil`.
     public func sync(sourceId: String? = nil) async throws -> [SyncReport] {
         let sources = try registry.load()
         let targets: [SourceDescriptor]
@@ -72,12 +72,12 @@ public struct SyncEngine: Sendable {
                 try store.installVersion(ref, version: result.version, from: fetched.parsed.directory)
                 try store.setCurrent(ref, version: result.version)
                 try store.gcOrphans(ref)
-                // Version đổi → sync các bản copy-mode đã enable (symlink tự ăn theo current).
+                // Version changed → re-sync enabled copy-mode targets (symlinks follow current on their own).
                 if let linkEngine, previousVersion != nil, previousVersion != result.version,
                    let report = try? linkEngine.propagateVersionChange(ref, newVersion: result.version) {
                     driftWarnings.append(contentsOf: report.driftSkipped.map { "\(ref.id) → \($0)" })
                 }
-                // Re-parse từ store để index.path trỏ vào bản trong library, không phải staging.
+                // Re-parse from the store so index.path points into the library, not into staging.
                 let storedDir = store.versionDir(ref, version: result.version)
                 let parsed = (try? SkillParser.parse(directory: storedDir)) ?? fetched.parsed
                 try index.upsertSkill(ref: ref, sourceId: result.descriptor.id, parsed: parsed,
@@ -88,7 +88,7 @@ public struct SyncEngine: Sendable {
             }
             try index.pruneSkills(sourceId: result.descriptor.id, keeping: keptIds)
         } else if result.descriptor.archived != descriptor.archived {
-            // Không đổi nội dung nhưng flag archive đổi → cập nhật deprecated trong index.
+            // Content unchanged but the archive flag moved → update `deprecated` in the index.
             try index.rebuild(home: home, store: store, registry: registry)
         }
 

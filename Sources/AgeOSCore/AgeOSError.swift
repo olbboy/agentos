@@ -1,6 +1,6 @@
 import Foundation
 
-/// Lỗi core kèm hướng khắc phục — CLI in `message` + `remedy` để user tự xử lý được.
+/// A core error carrying its remedy — the CLI prints `message` plus `remedy` so the user can act.
 public struct AgeOSError: Error, Sendable, CustomStringConvertible {
     public enum Code: String, Sendable {
         case invalidSkill = "invalid_skill"

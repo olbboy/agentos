@@ -1,12 +1,12 @@
 import Foundation
 
-/// Đánh dấu "AgeOS tạo ra" bằng xattr `dev.ageos.managed` — lớp phụ bên cạnh lockfile
-/// (lockfile là nguồn chính; xattr sống sót khi lockfile mất, và ngược lại khi backup
-/// tool strip xattr thì lockfile vẫn còn — hai lớp bù nhau).
+/// Marks something as "created by AgeOS" with the `dev.ageos.managed` xattr — a second
+/// layer beside the lockfile. The lockfile is primary; the xattr survives a lost lockfile,
+/// and when a backup tool strips xattrs the lockfile still holds. The two cover each other.
 public enum ManagedMarker {
     public static let attrName = "dev.ageos.managed"
 
-    /// Đặt marker. `followSymlink: false` → đánh dấu chính symlink (không phải đích).
+    /// Sets the marker. `followSymlink: false` → mark the symlink itself, not its destination.
     public static func set(on path: String, followSymlink: Bool = false) {
         let options: Int32 = followSymlink ? 0 : XATTR_NOFOLLOW
         "1".withCString { value in

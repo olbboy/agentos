@@ -2,13 +2,13 @@ import Foundation
 import TOMLKit
 
 /// Ghi config TOML (codex + grok `config.toml`, key `[mcp_servers.<name>]`).
-/// TOMLKit round-trip GIỮ giá trị + key lạ nhưng normalize format và CÓ THỂ MẤT
-/// COMMENT của user — hạn chế đã chốt ở validate (Session 1): chấp nhận + cảnh báo,
-/// backup luôn có trước khi ghi. Line-targeted editor là hướng replan nếu cộng đồng phản ứng.
+/// A TOMLKit round trip PRESERVES values and unknown keys, but it normalizes formatting and
+/// CAN LOSE the user's COMMENTS — a limitation settled during validation: accept it, warn about
+/// it, and always back up first. A line-targeted editor is the replan if the community objects.
 public struct TomlConfigWriter: ConfigWriter {
     public init() {}
 
-    /// Writer trả cảnh báo qua callback để CLI in (protocol không có kênh warning).
+    /// The writer returns warnings through a callback for the CLI to print (the protocol has no warning channel).
     public var onWarning: (@Sendable (String) -> Void)?
 
     public func upsertEntry(name: String, launch: McpServerModel.Launch, keyPath: String, in file: URL) throws {

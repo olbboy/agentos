@@ -1,8 +1,8 @@
 import Foundation
 import GRDB
 
-/// Cache SQLite (GRDB) cho search/list nhanh. KHÔNG phải nguồn chân lý —
-/// filesystem (store + sources.json + lockfile) mới là; `rebuild()` khôi phục từ FS.
+/// A SQLite cache (GRDB) for fast search and list. NOT the source of truth — the filesystem
+/// (store, sources.json, lockfile) is; `rebuild()` restores this from it.
 public struct IndexDB: Sendable {
     public let dbQueue: DatabaseQueue
 
@@ -57,7 +57,7 @@ public struct IndexDB: Sendable {
         return m
     }
 
-    // MARK: - MCP health cache (nuôi Budget Meter)
+    // MARK: - MCP health cache (feeds the Budget Meter)
 
     public func recordMcpHealth(entryName: String, report: HealthCheck.Report) throws {
         try dbQueue.write { db in
@@ -141,7 +141,7 @@ public struct IndexDB: Sendable {
         }
     }
 
-    /// Xóa skill của một nguồn không còn xuất hiện sau sync (repo gỡ skill).
+    /// Removes skills from a source that no longer appear after a sync (the repo dropped them).
     public func pruneSkills(sourceId: String, keeping ids: [String]) throws {
         try dbQueue.write { db in
             if ids.isEmpty {
@@ -171,7 +171,7 @@ public struct IndexDB: Sendable {
         try dbQueue.read { try SkillRow.fetchOne($0, key: id) }
     }
 
-    /// Tìm theo name không namespace (tiện CLI): unique thì trả, nhiều thì ném lỗi liệt kê.
+    /// Finds by bare name without a namespace (a CLI convenience): returns it when unique, throws listing the matches when not.
     public func resolveSkill(query: String) throws -> SkillRow {
         if let exact = try findSkill(id: query) { return exact }
         let matches = try dbQueue.read {
@@ -193,7 +193,7 @@ public struct IndexDB: Sendable {
         try dbQueue.read { try SourceRow.order(sql: "id").fetchAll($0) }
     }
 
-    /// Rebuild toàn bộ từ filesystem: store + sources.json.
+    /// Rebuilds everything from the filesystem: the store plus sources.json.
     public func rebuild(home: AgeOSHome, store: Store, registry: SourcesRegistry) throws {
         let sources = try registry.load()
         try dbQueue.write { db in

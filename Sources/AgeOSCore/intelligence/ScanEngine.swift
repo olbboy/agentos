@@ -1,7 +1,7 @@
 import Foundation
 
-/// Ghép các mảnh intelligence thành một lần quét: effective-load → dedupe
-/// (exact + near) → deprecated → lint. STATIC ONLY — không execute gì từ skill.
+/// Joins the intelligence pieces into a single pass: effective-load → dedupe
+/// (exact + near) → deprecated → lint. STATIC ONLY — nothing from a skill is executed.
 public struct ScanEngine: Sendable {
     public let home: AgeOSHome
     public let adapters: AdapterRegistry
@@ -20,7 +20,7 @@ public struct ScanEngine: Sendable {
         public var scannedSkills: Int
         public var exactDupes: [DedupeEngine.DupePair]
         public var nearDupes: [DedupeEngine.DupePair]
-        /// nil = máy không có embedding assets (near-dupe bị bỏ qua, đã ghi chú).
+        /// nil = the machine has no embedding assets (near-duplicate detection skipped, and noted).
         public var nearDupeAvailable: Bool
         public var deprecated: [DeprecatedItem]
         public var lintFindings: [LintItem]
@@ -40,7 +40,7 @@ public struct ScanEngine: Sendable {
     public func run() throws -> ScanReport {
         var notes: [String] = []
 
-        // 1) Thu thập item từ effective-load (mọi path mọi agent) + dedup theo path canonical.
+        // 1) Gather items from the effective-load scan (every path, every agent), deduped by canonical path.
         let scanner = EffectiveLoadScanner(adapters: adapters)
         let inventory = scanner.scan()
         var itemsByPath: [String: DedupeEngine.Item] = [:]
@@ -61,7 +61,7 @@ public struct ScanEngine: Sendable {
         let near: [DedupeEngine.DupePair]
         let nearAvailable: Bool
         if let n = dedupe.nearDupes(items) {
-            // Loại cặp đã dính exact (near luôn chứa exact vì cosine ~1 sau centering).
+            // Drop pairs already caught as exact (near always contains exact, since cosine ~1 after centering).
             let exactKeys = Set(exact.map { "\($0.a)|\($0.b)" })
             near = n.filter { !exactKeys.contains("\($0.a)|\($0.b)") }
             nearAvailable = true
@@ -86,7 +86,7 @@ public struct ScanEngine: Sendable {
             }
         }
 
-        // 4) Lint description (chỉ báo các skill CÓ finding).
+        // 4) Lint descriptions (reporting only the skills that actually have findings).
         var lintItems: [ScanReport.LintItem] = []
         for item in items {
             let findings = DescriptionLinter.lint(name: item.name, description: item.description)

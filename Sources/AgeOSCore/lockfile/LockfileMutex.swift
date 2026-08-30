@@ -1,13 +1,13 @@
 import Foundation
 
-/// Khóa liên-tiến-trình cho chu trình read-modify-write lockfile.
-/// `ageos` CLI và `ageos-mcp` (long-running) chạy song song theo thiết kế —
-/// không flock thì hai bên load cùng snapshot, ai ghi sau đè mất update của
-/// người trước, và entry "mồ côi" đó sẽ bị `doctor --fix` xóa nhầm dây chuyền.
+/// A cross-process lock around the lockfile's read-modify-write cycle.
+/// The `ageos` CLI and the long-running `ageos-mcp` run side by side by design — without
+/// flock they load the same snapshot, whoever writes last erases the other's update, and
+/// the orphaned entry that leaves behind gets deleted by `doctor --fix` in a chain reaction.
 public enum LockfileMutex {
-    /// flock(2) exclusive trên file `.ageos.flock` cạnh lockfile. Reentrancy:
-    /// KHÔNG reentrant trong cùng tiến trình theo thiết kế đơn giản — mỗi thao tác
-    /// public của LinkEngine/McpManager tự bao đúng một lần, không lồng nhau.
+    /// An exclusive flock(2) on the `.ageos.flock` file next to the lockfile. Reentrancy:
+    /// deliberately NOT reentrant within one process, for simplicity — each public operation
+    /// on LinkEngine or McpManager wraps itself exactly once and they never nest.
     public static func withExclusiveLock<T>(home: AgeOSHome, _ body: () throws -> T) throws -> T {
         try FileManager.default.createDirectory(at: home.root, withIntermediateDirectories: true)
         let lockPath = home.root.appendingPathComponent(".ageos.flock").path

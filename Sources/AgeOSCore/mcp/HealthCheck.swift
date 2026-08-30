@@ -1,20 +1,20 @@
 import Foundation
 
-/// Health-check MCP stdio: spawn → initialize → tools/list → đo latency + schema tokens.
-/// Cam kết process-hygiene: LUÔN terminate (SIGTERM → 2s → SIGKILL) — không để mồ côi.
+/// Health-checks an MCP stdio server: spawn → initialize → tools/list → measure latency and schema tokens.
+/// A process-hygiene promise: it ALWAYS terminates (SIGTERM → 2s → SIGKILL) — nothing is orphaned.
 public enum HealthCheck {
     public struct Report: Sendable, Codable {
         public var ok: Bool
         public var latencyMs: Int
         public var toolCount: Int
-        /// Ước lượng token schema tools (chars/4 — hệ số spike, ±20%).
+        /// An estimate of the tools' schema tokens (chars/4 — the spike factor, ±20%).
         public var schemaTokens: Int
         public var serverInfo: String?
         public var error: String?
         public var stderrTail: String?
     }
 
-    /// Chạy đồng bộ (CLI one-shot). `timeout` cho TOÀN bộ flow.
+    /// Runs synchronously (the CLI is one-shot). `timeout` covers the WHOLE flow.
     public static func run(_ launch: McpServerModel.Launch, timeout: TimeInterval = 15) -> Report {
         guard launch.transport == .stdio, let command = launch.command else {
             return Report(ok: false, latencyMs: 0, toolCount: 0, schemaTokens: 0,
@@ -22,7 +22,7 @@ public enum HealthCheck {
         }
 
         let process = Process()
-        // Resolve command qua /usr/bin/env để ăn PATH (npx, uvx, binary tuyệt đối đều chạy).
+        // Resolve the command through /usr/bin/env so PATH applies (npx, uvx and absolute binaries all work).
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = [command] + launch.args
         var env = ProcessInfo.processInfo.environment
@@ -34,12 +34,12 @@ public enum HealthCheck {
         process.standardOutput = stdout
         process.standardError = stderr
 
-        // Gom stdout theo dòng bằng readabilityHandler + semaphore báo mỗi dòng mới.
+        // Collect stdout line by line with readabilityHandler, signalling a semaphore per line.
         let collector = LineCollector()
         stdout.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
             if data.isEmpty {
-                collector.markEOF() // server đóng stdout (crash/thoát) → fail nhanh, khỏi đợi hết timeout
+                collector.markEOF() // the server closed stdout (crash or exit) → fail fast instead of waiting out the timeout
             } else {
                 collector.feed(data)
             }
@@ -50,7 +50,7 @@ public enum HealthCheck {
         }
 
         defer {
-            // Dọn process bất kể kết quả — tuân process-management rules.
+            // Clean the process up whatever the outcome — per the process-management rules.
             stdout.fileHandleForReading.readabilityHandler = nil
             stderr.fileHandleForReading.readabilityHandler = nil
             if process.isRunning {
@@ -82,10 +82,10 @@ public enum HealthCheck {
             while Date() < deadline {
                 if let line = collector.nextLine(waitUntil: deadline) {
                     guard let obj = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any] else {
-                        continue // log line không phải JSON → bỏ qua
+                        continue // a log line, not JSON → skip it
                     }
                     if let rid = obj["id"] as? Int, rid == id { return obj }
-                    // notification/response khác → bỏ qua, đọc tiếp
+                    // some other notification or response → skip it and keep reading
                 } else if !process.isRunning {
                     return nil
                 }
@@ -121,7 +121,7 @@ public enum HealthCheck {
     }
 }
 
-/// Hộp Data thread-safe cho readabilityHandler (chạy trên thread nền).
+/// A thread-safe box for Data, for readabilityHandler (which runs on a background thread).
 final class DataBox: @unchecked Sendable {
     private var data = Data()
     private let lock = NSLock()
@@ -136,7 +136,7 @@ final class DataBox: @unchecked Sendable {
     }
 }
 
-/// Gom bytes thành dòng, cho phép chờ dòng kế với deadline (thread-safe).
+/// Collects bytes into lines and lets a caller wait for the next line with a deadline (thread-safe).
 final class LineCollector: @unchecked Sendable {
     private var buffer = Data()
     private var lines: [String] = []
@@ -170,7 +170,7 @@ final class LineCollector: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         while lines.isEmpty && !eof && Date() < deadline {
-            // Chờ theo nhịp ngắn để còn thoát khi process chết mà không signal.
+            // Wait in short beats so we can still bail out when the process dies without signalling.
             _ = lock.wait(until: min(deadline, Date().addingTimeInterval(0.2)))
         }
         return lines.isEmpty ? nil : lines.removeFirst()

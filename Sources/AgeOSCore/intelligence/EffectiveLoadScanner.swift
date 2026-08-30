@@ -1,11 +1,11 @@
 import Foundation
 
-/// Quét HIỆN TRẠNG thật: agent nào đang load skill gì, từ path nào.
-/// Điểm mấu chốt: một agent đọc NHIỀU path (grok đọc 4+ nguồn kể cả compat Claude),
-/// nên cùng một skill có thể bị load lặp — scanner phơi ra điều đó.
+/// Scans what is ACTUALLY happening: which agent loads which skill, from which path.
+/// The key point: one agent reads SEVERAL paths (grok reads 4+ sources, including Claude's
+/// compat paths), so the same skill can be loaded more than once — the scanner exposes that.
 ///
-/// AN TOÀN: chỉ ĐỌC file (static). Tuyệt đối không spawn process, không execute
-/// bất kỳ nội dung nào trong skill.
+/// SAFETY: it only READS files (static). It never spawns a process and never executes
+/// anything inside a skill.
 public struct EffectiveLoadScanner: Sendable {
     public let adapters: AdapterRegistry
 
@@ -17,22 +17,22 @@ public struct EffectiveLoadScanner: Sendable {
         public var name: String
         public var description: String
         public var path: String
-        /// `managed` = AgeOS tạo (marker/manifest) · `user` = đồ user tự cài.
+        /// `managed` = created by AgeOS (marker or manifest) · `user` = installed by the user.
         public var managed: Bool
-        /// Path nguồn là globalPath chính hay compat path.
+        /// Whether the source path is the main globalPath or a compat path.
         public var origin: String
     }
 
     public struct AgentLoad: Sendable, Codable {
         public var adapterId: String
         public var entries: [LoadedSkill]
-        /// name → các path cùng cung cấp skill đó trong agent này (≥2 = trùng).
+        /// name → the paths providing that skill inside this agent (2 or more = duplicated).
         public var duplicated: [String: [String]]
     }
 
     public struct Inventory: Sendable, Codable {
         public var agents: [AgentLoad]
-        /// name → agents đang load nó (cross-agent view).
+        /// name → the agents loading it (the cross-agent view).
         public var byName: [String: [String]]
         public var totalDistinctSkills: Int
         public var totalLoadEntries: Int
@@ -77,8 +77,8 @@ public struct EffectiveLoadScanner: Sendable {
                          totalLoadEntries: agents.reduce(0) { $0 + $1.entries.count })
     }
 
-    /// Đọc một thư mục chứa nhiều skill dir (mỗi dir con có SKILL.md).
-    /// Plugin cache (marketplaces) lồng sâu hơn → dò đệ quy có giới hạn.
+    /// Reads one directory holding several skill directories (each subdirectory has a SKILL.md).
+    /// Plugin caches (marketplaces) nest deeper → recurse, but with a depth limit.
     func scanSkillDir(_ dir: URL, origin: String) -> [LoadedSkill] {
         let fm = FileManager.default
         guard fm.fileExists(atPath: dir.path) else { return [] }
@@ -121,9 +121,9 @@ public struct EffectiveLoadScanner: Sendable {
         public var errors: [String]
     }
 
-    /// Import skill user tự cài (không managed) vào library nguồn `local/adopted`.
-    /// Copy vào `~/.ageos/adopted/` rồi add + sync như nguồn local bình thường —
-    /// KHÔNG đụng bản gốc trong thư mục agent.
+    /// Imports skills the user installed themselves (not managed) into the `local/adopted` source.
+    /// Copies them into `~/.ageos/adopted/`, then adds and syncs them like any local source —
+    /// the originals inside the agent folders are NEVER touched.
     public func adoptImport(home: AgeOSHome, engine: SyncEngine) async throws -> AdoptReport {
         let inventory = scan()
         let adoptedDir = home.root.appendingPathComponent("adopted", isDirectory: true)
@@ -143,7 +143,7 @@ public struct EffectiveLoadScanner: Sendable {
                     if FileManager.default.fileExists(atPath: dest.path) {
                         try FileManager.default.removeItem(at: dest)
                     }
-                    // Copy resolve symlink (bản chất nội dung) — đồ gốc giữ nguyên.
+                    // Copy with symlinks resolved (the content itself) — the original is left alone.
                     try FileManager.default.copyItem(at: URL(fileURLWithPath: entry.path).resolvingSymlinksInPath(),
                                                      to: dest)
                     imported.append(entry.name)

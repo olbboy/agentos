@@ -1,12 +1,12 @@
 import Foundation
 import TOMLKit
 
-/// Context Budget Meter: mỗi skill/MCP server "ăn" bao nhiêu token catalog của agent
-/// TRƯỚC KHI user gõ chữ nào. Hệ số 4 bytes/token (spike 30/8, khớp cách grok tự ước,
-/// sai số ±20% — mọi con số là ƯỚC LƯỢNG và UI phải ghi rõ).
+/// The Context Budget Meter: how many catalog tokens each skill and MCP server costs an
+/// agent BEFORE the user types anything. The 4 bytes-per-token factor comes from a spike and
+/// matches how grok estimates it, ±20% — every number here is an ESTIMATE and the UI must say so.
 public struct BudgetMeter: Sendable {
     public let adapters: AdapterRegistry
-    /// Lookup schema tokens từ health đã chạy (entry name → tokens).
+    /// Looks up schema tokens from a health run (entry name → tokens).
     public let mcpSchemaTokens: @Sendable (String) -> Int?
 
     public init(adapters: AdapterRegistry, mcpSchemaTokens: @escaping @Sendable (String) -> Int? = { _ in nil }) {
@@ -32,12 +32,12 @@ public struct BudgetMeter: Sendable {
         }
     }
 
-    /// Chi phí catalog 1 skill với agent cụ thể: name + description (cắt theo adapter)
-    /// + ~30 chars format bao quanh mỗi entry.
+    /// What one skill costs a specific agent's catalog: name plus description (truncated the
+    /// way that adapter truncates) plus roughly 30 characters of surrounding format.
     ///
-    /// `public` có chủ ý: app SwiftUI hiện token ước tính cho từng dòng Library và
-    /// phải dùng LẠI đúng công thức này. Nhân bản công thức trong app là con đường
-    /// chắc chắn dẫn tới hai con số lệch nhau cho cùng một skill.
+    /// Deliberately `public`: the SwiftUI app shows an estimate per Library row and must
+    /// REUSE this exact formula. Duplicating it in the app is the sure road to two different
+    /// numbers for the same skill.
     public static func skillTokens(name: String, description: String, truncateChars: Int) -> Int {
         let descChars = truncateChars > 0 ? min(description.count, truncateChars) : description.count
         return (name.count + descChars + 30) / 4
@@ -50,7 +50,7 @@ public struct BudgetMeter: Sendable {
         let truncate = adapter.budget?.descriptionTruncateChars ?? 0
         var warnings: [String] = []
 
-        // Skill: đếm theo tên distinct (agent dedup theo tên giữa các path).
+        // Skills: counted by distinct name (an agent dedupes by name across paths).
         var entries: [Report.Entry] = []
         if let agent = inventory.agents.first(where: { $0.adapterId == adapterId }) {
             var seen = Set<String>()
@@ -68,7 +68,7 @@ public struct BudgetMeter: Sendable {
         entries.sort { $0.tokens > $1.tokens }
         let skillTokens = entries.reduce(0) { $0 + $1.tokens }
 
-        // MCP: đọc read-only config client, cost = schema tokens từ health.
+        // MCP: read the client config read-only; the cost is the schema tokens from health.
         var mcpEntries: [String] = []
         if let mcp = adapter.mcp {
             mcpEntries = (try? Self.readMcpEntryNames(configPath: AgeOSHome.expand(mcp.configPath),
@@ -99,7 +99,7 @@ public struct BudgetMeter: Sendable {
                       totalTokens: total, warnThreshold: threshold, warnings: warnings)
     }
 
-    /// Đọc DANH SÁCH tên entry MCP từ config client — thuần read-only.
+    /// Reads the LIST of MCP entry names from a client config — strictly read-only.
     static func readMcpEntryNames(configPath: URL, format: AdapterSpec.ConfigFormat, keyPath: String) throws -> [String] {
         guard let data = FileManager.default.contents(atPath: configPath.path) else { return [] }
         switch format {

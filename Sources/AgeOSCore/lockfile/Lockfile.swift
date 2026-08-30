@@ -1,8 +1,8 @@
 import Foundation
 
-/// `ageos.lock.json` — nhớ version + nơi đã enable (target, scope, linkMode)
-/// để update/disable/doctor biết chính xác AgeOS đã tạo gì, không đụng đồ user.
-/// Serialize ổn định (sorted keys) để diff được trong git.
+/// `ageos.lock.json` — remembers versions and where things were enabled (target, scope,
+/// linkMode) so update, disable and doctor know exactly what AgeOS created and leave the
+/// user's own files alone. Serialized stably (sorted keys) so it diffs cleanly in git.
 public struct Lockfile: Sendable, Codable, Equatable {
     public var schemaVersion: Int
     public var skills: [String: SkillEntry]
@@ -11,7 +11,7 @@ public struct Lockfile: Sendable, Codable, Equatable {
     public struct SkillEntry: Sendable, Codable, Equatable {
         public var source: String
         public var version: String
-        /// Key: `<adapterId>@global` hoặc `<adapterId>@<projectPath>`.
+        /// The key is `<adapterId>@global` or `<adapterId>@<projectPath>`.
         public var targets: [String: TargetState]
 
         public init(source: String, version: String, targets: [String: TargetState] = [:]) {
@@ -22,13 +22,13 @@ public struct Lockfile: Sendable, Codable, Equatable {
     }
 
     public struct TargetState: Sendable, Codable, Equatable {
-        /// `config` = entry ghi trong file config client (MCP), không phải link trên FS.
+        /// `config` = an entry written into a client's config file (MCP), not a link on disk.
         public enum LinkMode: String, Sendable, Codable { case symlink, copy, config }
         public var scope: String
         public var linkMode: LinkMode
-        /// Path tuyệt đối nơi skill xuất hiện trong thư mục agent.
+        /// The absolute path where the skill appears inside the agent's folder.
         public var path: String
-        /// Copy mode: hash từng file để detect drift (Phase 3).
+        /// Copy mode: a hash per file, to detect drift.
         public var manifestSha256: String?
 
         public init(scope: String, linkMode: LinkMode, path: String, manifestSha256: String? = nil) {
@@ -42,7 +42,7 @@ public struct Lockfile: Sendable, Codable, Equatable {
     public struct McpEntry: Sendable, Codable, Equatable {
         public var source: String
         public var version: String
-        /// Key env được đánh dấu nhạy cảm (giá trị vẫn plaintext ở MVP — Keychain là v1.1).
+        /// Env keys marked sensitive (the values are still plaintext at MVP — Keychain is v1.1).
         public var sensitiveEnv: [String]
         public var targets: [String: TargetState]
 
@@ -80,7 +80,7 @@ public struct Lockfile: Sendable, Codable, Equatable {
         try AtomicFile.write(try encoder.encode(self), to: url)
     }
 
-    /// Tiện ích key target.
+    /// Target-key helpers.
     public static func targetKey(adapter: String, projectPath: String?) -> String {
         projectPath.map { "\(adapter)@\($0)" } ?? "\(adapter)@global"
     }

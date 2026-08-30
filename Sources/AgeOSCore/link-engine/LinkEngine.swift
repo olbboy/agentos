@@ -1,12 +1,12 @@
 import Foundation
 import CryptoKit
 
-/// Enable/disable skill vào thư mục agent theo adapter spec.
-/// Bất biến an toàn:
-/// 1. Không bao giờ ghi đè thứ AgeOS không tạo (nhận diện: lockfile + xattr marker).
-/// 2. Idempotent — enable lại chỉ refresh link/copy của chính mình.
-/// 3. Symlink trỏ vào `current` của store → swap version lan tự động; copy mode
-///    được `propagateVersionChange` sync lại (tôn trọng drift).
+/// Enables and disables skills inside an agent's folder, following the adapter spec.
+/// The safety invariants:
+/// 1. Never overwrite something AgeOS did not create (identified by lockfile plus xattr marker).
+/// 2. Idempotent — enabling again only refreshes our own link or copy.
+/// 3. Symlinks point at the store's `current`, so a version swap propagates by itself; copy
+///    mode is re-synced by `propagateVersionChange`, which respects drift.
 public struct LinkEngine: Sendable {
     public let home: AgeOSHome
     public let store: Store
@@ -76,7 +76,7 @@ public struct LinkEngine: Sendable {
         var lock = try Lockfile.load(from: home.lockfilePath)
         let key = Lockfile.targetKey(adapter: adapterId, projectPath: project?.path)
 
-        // Preflight: đích đã có thứ gì đó → chỉ đi tiếp nếu là của mình.
+        // Preflight: something already exists at the destination → only continue if it is ours.
         let fm = FileManager.default
         var isDir: ObjCBool = false
         let destExists = fm.fileExists(atPath: dest.path, isDirectory: &isDir)
@@ -152,7 +152,7 @@ public struct LinkEngine: Sendable {
                              note: destExists ? nil : "the destination was already gone — only cleaning the lockfile")
     }
 
-    // MARK: - Version propagation (gọi sau sync đổi version)
+    // MARK: - Version propagation (called after a sync changes a version)
 
     public struct PropagationReport: Sendable, Codable {
         public var skillId: String
@@ -175,13 +175,13 @@ public struct LinkEngine: Sendable {
         for (key, target) in entry.targets {
             switch target.linkMode {
             case .config:
-                continue // entry MCP — version skill không liên quan
+                continue // an MCP entry — skill versions are irrelevant to it
             case .symlink:
-                resynced.append(key) // symlink ăn theo `current` — không cần làm gì
+                resynced.append(key) // a symlink follows `current` — nothing to do
             case .copy:
                 let dest = URL(fileURLWithPath: target.path)
-                // Đích tồn tại mà KHÔNG còn manifest AgeOS = user đã thay bằng đồ riêng
-                // → tuyệt đối không re-copy đè (cùng lớp bug với isOurs hằng-đúng).
+                // The destination exists but no longer carries an AgeOS manifest = the user
+                // replaced it with their own → never re-copy over it (same class of bug as an always-true isOurs).
                 if FileManager.default.fileExists(atPath: dest.path),
                    CopySync.readManifest(at: dest) == nil {
                     skipped.append("\(key): destination has no AgeOS manifest (replaced by the user?) — skipped, check with `ageos doctor`")
@@ -206,16 +206,16 @@ public struct LinkEngine: Sendable {
 
     // MARK: - Helpers
 
-    /// "Của mình" CHỈ theo bằng chứng vật lý trên đích: xattr marker, manifest AgeOS,
-    /// hoặc symlink trỏ vào store của AgeOS. TUYỆT ĐỐI không so path lockfile với
-    /// dest — dest thường được DỰNG TỪ chính path đó (hằng-đúng, từng là lỗ hổng
-    /// Critical khiến disable xóa nhầm thư mục user thay chỗ symlink của AgeOS).
+    /// "Ours" is decided ONLY by physical evidence at the destination: the xattr marker, an
+    /// AgeOS manifest, or a symlink pointing into the AgeOS store. NEVER by comparing the
+    /// lockfile path against dest — dest is usually BUILT FROM that same path, making the
+    /// check always true. That was a Critical hole where disable deleted a user's folder.
     func isOurs(_ dest: URL) -> Bool {
         if ManagedMarker.isSet(on: dest.path) { return true }
         if CopySync.readManifest(at: dest) != nil { return true }
         if let linkTarget = try? FileManager.default.destinationOfSymbolicLink(atPath: dest.path) {
-            // Symlink của AgeOS luôn trỏ vào library store (tạo bằng path tuyệt đối,
-            // nhưng chấp nhận cả relative để bền với chỉnh tay vô hại).
+            // An AgeOS symlink always points into the library store (created with an absolute
+            // path, but relative is accepted too, to survive harmless hand edits).
             let resolved = linkTarget.hasPrefix("/")
                 ? URL(fileURLWithPath: linkTarget)
                 : dest.deletingLastPathComponent().appendingPathComponent(linkTarget)
@@ -226,7 +226,7 @@ public struct LinkEngine: Sendable {
         return false
     }
 
-    /// Hash gọn toàn manifest — lockfile chỉ cần 1 giá trị so nhanh.
+    /// A compact hash of the whole manifest — the lockfile only needs one value to compare.
     func hashOfManifest(_ manifest: CopySync.Manifest) -> String {
         let joined = manifest.files.sorted { $0.key < $1.key }
             .map { "\($0.key):\($0.value)" }

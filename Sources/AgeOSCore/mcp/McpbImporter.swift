@@ -1,7 +1,7 @@
 import Foundation
 
-/// Import bundle `.mcpb` (ZIP + manifest.json) vào `library/mcp/<ns>/<name>/<version>/`.
-/// Payload nằm yên trong library — config client trỏ vào đó, không rải file khắp máy.
+/// Imports a `.mcpb` bundle (a ZIP plus manifest.json) into `library/mcp/<ns>/<name>/<version>/`.
+/// The payload stays put inside the library — the client config points at it, rather than scattering files across the machine.
 public enum McpbImporter {
     struct Manifest: Decodable {
         var name: String
@@ -60,7 +60,7 @@ public enum McpbImporter {
         }
         try AtomicFile.moveDirectory(staging, to: destDir)
 
-        // Dựng launch từ mcp_config; placeholder ${__dirname} → thư mục bundle trong library.
+        // Build launch from mcp_config; the ${__dirname} placeholder resolves to the bundle directory in the library.
         let config = manifest.server?.mcpConfig
         let dirToken = "${__dirname}"
         func resolve(_ s: String) -> String {

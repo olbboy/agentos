@@ -1,9 +1,9 @@
 import Foundation
 
-/// Nguồn GitHub qua REST API — tarball, KHÔNG cần git:
+/// A GitHub source over the REST API — tarballs, NO git required:
 /// 1. `GET /repos/{o}/{r}` (ETag) → default_branch, archived, stars, license
 /// 2. `GET /repos/{o}/{r}/commits/{branch}` (Accept: sha) → commit sha = version
-/// 3. sha đổi → tải tarball `/repos/{o}/{r}/tarball/{sha}` và quét SKILL.md
+/// 3. the sha changed → download `/repos/{o}/{r}/tarball/{sha}` and scan for SKILL.md
 public struct GitHubSource: SourceProvider {
     public let descriptor: SourceDescriptor
     let http: HTTPClient
@@ -64,7 +64,7 @@ public struct GitHubSource: SourceProvider {
         var meta: RepoMeta?
         switch metaResp.statusCode {
         case 304:
-            break // không đổi — vẫn check sha vì ETag chỉ cover metadata
+            break // unchanged — still check the sha, since the ETag only covers metadata
         case 200:
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601

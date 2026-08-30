@@ -1,8 +1,8 @@
 import Foundation
 
-/// macOS có prefix symlink hệ thống (`/var` → `/private/var`, `/tmp` → `/private/tmp`)
-/// nên hai path cùng trỏ một file có thể khác chuỗi. MỌI phép so sánh path trong
-/// AgeOS phải đi qua `canonicalPath` — so chuỗi thô là bug đang chờ nổ.
+/// macOS has system symlink prefixes (`/var` → `/private/var`, `/tmp` → `/private/tmp`), so
+/// two paths pointing at the same file can be different strings. EVERY path comparison in
+/// AgeOS must go through `canonicalPath` — comparing raw strings is a bug waiting to happen.
 extension URL {
     var canonicalPath: String {
         resolvingSymlinksInPath().path
@@ -10,7 +10,7 @@ extension URL {
 }
 
 extension String {
-    /// Canonical hóa một path string (expand `~`, resolve symlink prefix).
+    /// Canonicalizes a path string (expands `~`, resolves symlink prefixes).
     var canonicalFilePath: String {
         URL(fileURLWithPath: (self as NSString).expandingTildeInPath).canonicalPath
     }

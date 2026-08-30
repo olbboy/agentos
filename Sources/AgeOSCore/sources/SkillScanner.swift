@@ -1,8 +1,8 @@
 import Foundation
 
-/// Dò mọi `**/SKILL.md` (độ sâu ≤ maxDepth) trong một cây thư mục.
-/// Repo ngoài hoang dã có đủ kiểu layout (skill ở root, nested `skills/`, multi-skill
-/// kiểu anthropics/skills) — dò theo file marker thay vì đoán cấu trúc.
+/// Finds every `**/SKILL.md` (down to maxDepth) inside a directory tree.
+/// Repositories in the wild use every possible layout (a skill at the root, a nested `skills/`,
+/// the multi-skill shape anthropics/skills uses) — so it looks for the marker file rather than guessing structure.
 public enum SkillScanner {
     public struct ScanOutput: Sendable {
         public var skills: [ParsedSkill]
@@ -33,7 +33,7 @@ public enum SkillScanner {
                 } catch {
                     skipped.append((dir.path, "\(error)"))
                 }
-                return // skill dir không lồng skill dir khác
+                return // a skill directory does not nest another skill directory
             }
             for entry in entries {
                 let isDir = (try? entry.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false

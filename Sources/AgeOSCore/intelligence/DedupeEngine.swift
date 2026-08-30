@@ -2,13 +2,13 @@ import Foundation
 import CryptoKit
 import NaturalLanguage
 
-/// Bắt trùng lặp: exact (hash chuẩn hóa) + near (embedding cosine).
+/// Finds duplicates: exact (normalized hash) plus near (embedding cosine).
 ///
-/// Bài học spike 30/8: cosine trên raw mean-pooled NLContextualEmbedding KHÔNG phân
-/// biệt được (cặp khác nghĩa vẫn 0.90+ vì vector anisotropic). Bắt buộc mean-center
-/// theo corpus trước khi so cosine — threshold calibrate trên fixture.
+/// The lesson from the spike: cosine over raw mean-pooled NLContextualEmbedding CANNOT
+/// discriminate — unrelated pairs still score 0.90+ because the vectors are anisotropic.
+/// Mean-centering across the corpus before comparing is mandatory; the threshold is calibrated on fixtures.
 public struct DedupeEngine: Sendable {
-    /// Ngưỡng cosine SAU mean-centering (calibrate bằng DedupeTests trên fixture thật).
+    /// The cosine threshold AFTER mean-centering (calibrated by DedupeTests on real fixtures).
     public var nearThreshold: Double
 
     public init(nearThreshold: Double = 0.72) {
@@ -50,7 +50,7 @@ public struct DedupeEngine: Sendable {
 
     // MARK: - Exact
 
-    /// Hash chuẩn hóa: hạ lowercase, gộp whitespace — đổi format không thoát được exact-dupe.
+    /// A normalized hash: lowercased, whitespace collapsed — reformatting cannot escape exact-duplicate detection.
     public static func normalizedHash(_ item: Item) -> String {
         let normalized = [item.name, item.description, item.bodyHead]
             .joined(separator: "\u{1F}")
@@ -77,20 +77,20 @@ public struct DedupeEngine: Sendable {
 
     // MARK: - Near (embedding)
 
-    /// Text đưa vào embedding: name + description + đầu body (input đã chốt ở plan,
-    /// spike xác nhận cần cả body head để tăng phân biệt).
+    /// The text fed to the embedding: name plus description plus the head of the body (the
+    /// input was settled in the plan; the spike confirmed the body head is needed to discriminate).
     static func embeddingText(_ item: Item) -> String {
         "\(item.name). \(item.description)\n\(item.bodyHead.prefix(1000))"
     }
 
-    /// Trả nil nếu máy không có assets embedding (CI) — caller degrade sang exact-only.
-    /// `precomputedVectors` cho test cơ chế (centering + threshold + pairing) chạy
-    /// deterministic trên CI không có assets — near-dupe không được là phantom test.
+    /// Returns nil when the machine has no embedding assets (CI) — callers degrade to exact-only.
+    /// `precomputedVectors` lets the mechanism tests (centering, threshold, pairing) run
+    /// deterministically on CI without assets — near-duplicate detection must not be a phantom test.
     public func nearDupes(_ items: [Item], precomputedVectors: [[Double]]? = nil) -> [DupePair]? {
         guard items.count >= 2,
               let vectors = precomputedVectors ?? Self.embedAll(items.map(Self.embeddingText)) else { return nil }
 
-        // Mean-center: trừ vector trung bình corpus để phá anisotropy.
+        // Mean-center: subtract the corpus mean vector to break the anisotropy.
         let dim = vectors[0].count
         var mean = [Double](repeating: 0, count: dim)
         for v in vectors {
@@ -114,7 +114,7 @@ public struct DedupeEngine: Sendable {
         return pairs.sorted { $0.score > $1.score }
     }
 
-    /// Embed tuần tự (NLContextualEmbedding không Sendable — giữ trong 1 scope).
+    /// Embeds sequentially (NLContextualEmbedding is not Sendable — keep it in one scope).
     static func embedAll(_ texts: [String]) -> [[Double]]? {
         guard let embedding = NLContextualEmbedding(language: .english),
               embedding.hasAvailableAssets else { return nil }

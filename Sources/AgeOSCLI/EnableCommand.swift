@@ -74,7 +74,7 @@ struct DisableCommand: AsyncParsableCommand {
     func run() async throws {
         do {
             let engine = try CLIRuntime.makeEngine()
-            // Disable không bắt buộc skill còn trong index — resolve mềm qua lockfile.
+            // Disable does not require the skill to still be in the index — resolve leniently via the lockfile.
             let lock = try Lockfile.load(from: engine.home.lockfilePath)
             let id: String
             if lock.skills[skill] != nil {

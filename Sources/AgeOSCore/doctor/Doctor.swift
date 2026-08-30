@@ -1,9 +1,9 @@
 import Foundation
 
-/// Khám drift giữa lockfile ↔ filesystem thật, sửa được với `--fix`:
-/// link gãy → re-link · copy drift → re-copy (chỉ khi --fix, in rõ) ·
-/// orphan file (marker AgeOS nhưng lockfile không biết) → gỡ ·
-/// đích biến mất → tái tạo · agent path biến mất → cảnh báo.
+/// Examines drift between the lockfile and the real filesystem, repairable with `--fix`:
+/// broken link → re-link · copy drift → re-copy (only with --fix, and it says so) ·
+/// orphan file (carries the AgeOS marker but the lockfile does not know it) → remove ·
+/// destination gone → recreate · agent path gone → warn.
 public struct Doctor: Sendable {
     public let home: AgeOSHome
     public let store: Store
@@ -41,7 +41,7 @@ public struct Doctor: Sendable {
         let lock = try Lockfile.load(from: home.lockfilePath)
         let engine = LinkEngine(home: home, store: store, adapters: adapters)
 
-        // 1) Đối chiếu từng entry lockfile với filesystem.
+        // 1) Compare each lockfile entry against the filesystem.
         for (skillId, entry) in lock.skills.sorted(by: { $0.key < $1.key }) {
             guard let ref = SkillRef(id: skillId) else { continue }
             let storeOK = store.currentVersion(ref) != nil
@@ -89,9 +89,9 @@ public struct Doctor: Sendable {
 
                 switch target.linkMode {
                 case .config:
-                    break // entry MCP trong config client — Phase 4 disable/enable tự quản, doctor skill không đụng
+                    break // an MCP entry in a client config — enable/disable manages those; doctor's skill pass leaves them alone
                 case .symlink:
-                    // Link tồn tại nhưng đích chết (store dời/mất) → re-link.
+                    // The link exists but its destination is dead (store moved or gone) → re-link.
                     var resolved = dest.resolvingSymlinksInPath()
                     if linkDestination != nil, !fm.fileExists(atPath: resolved.path) {
                         var fixed = false
@@ -137,9 +137,9 @@ public struct Doctor: Sendable {
             }
         }
 
-        // 2) Orphan: file mang marker AgeOS trong thư mục agent nhưng lockfile không biết.
-        // So sánh qua canonicalPath — /var vs /private/var từng làm mọi entry hợp lệ
-        // bị coi là orphan và bị --fix xóa nhầm.
+        // 2) Orphans: files carrying the AgeOS marker inside an agent folder that the lockfile does not know.
+        // Compared through canonicalPath — /var vs /private/var once made every valid entry
+        // look like an orphan, and --fix deleted them.
         let knownPaths = Set(lock.skills.values.flatMap { $0.targets.values.map { $0.path.canonicalFilePath } })
         for adapter in adapters.detected() {
             guard let skillsBlock = adapter.skills else { continue }

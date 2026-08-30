@@ -1,7 +1,7 @@
 import Foundation
 
-/// Lint description theo tiêu chí "agent chọn đúng skill nhờ description":
-/// đủ dài để phân biệt, có tín hiệu trigger ("use when..."), không mơ hồ.
+/// Lints a description against one criterion: can an agent pick the right skill from it?
+/// Long enough to discriminate, carrying a trigger signal ("use when..."), not vague.
 public enum DescriptionLinter {
     public struct Finding: Sendable, Codable, Equatable {
         public enum Rule: String, Sendable, Codable {
@@ -42,6 +42,11 @@ public enum DescriptionLinter {
         }
 
         let lowered = trimmed.lowercased()
+        // The two Vietnamese phrases are DELIBERATE and are not leftovers from the
+        // translation. This array is matched against descriptions written by skill
+        // authors, who may write in any language; dropping them would silently stop
+        // the linter recognising a trigger signal in a Vietnamese description. They
+        // are matching data, not text anyone reads.
         let hasTrigger = ["use when", "use this", "use for", "trigger", "invoke", "khi nào", "dùng khi", "when the user", "when you"]
             .contains { lowered.contains($0) }
         if !hasTrigger && trimmed.count >= 40 {

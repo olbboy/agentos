@@ -1,7 +1,7 @@
 import Foundation
 
-/// Ranh giới network duy nhất của core — protocol để test mock được toàn bộ
-/// GitHubSource mà không chạm mạng thật.
+/// Core's only network boundary — a protocol, so tests can mock the whole of GitHubSource
+/// without touching the real network.
 public protocol HTTPClient: Sendable {
     func get(_ url: URL, headers: [String: String]) async throws -> (data: Data, response: HTTPURLResponse)
 }

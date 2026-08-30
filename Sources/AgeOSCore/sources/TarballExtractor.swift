@@ -1,10 +1,10 @@
 import Foundation
 
-/// Giải nén tarball qua `/usr/bin/tar` hệ thống (có sẵn trên mọi macOS).
-/// Viết untar thuần Swift là phức tạp không cần thiết cho MVP.
+/// Extracts a tarball with the system `/usr/bin/tar` (present on every macOS).
+/// Writing a pure-Swift untar is complexity the MVP does not need.
 public enum TarballExtractor {
-    /// Giải nén `.tar.gz` vào `destination`, trả về thư mục top-level duy nhất
-    /// (tarball GitHub luôn bọc mọi thứ trong `owner-repo-sha/`).
+    /// Extracts a `.tar.gz` into `destination` and returns the single top-level directory
+    /// (a GitHub tarball always wraps everything in `owner-repo-sha/`).
     public static func extract(_ tarball: URL, into destination: URL) throws -> URL {
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         let process = Process()
@@ -23,7 +23,7 @@ public enum TarballExtractor {
         let entries = try FileManager.default.contentsOfDirectory(at: destination, includingPropertiesForKeys: [.isDirectoryKey])
             .filter { $0.hasDirectoryPath }
         guard let top = entries.first, entries.count == 1 else {
-            return destination // tarball không bọc top-dir → dùng chính destination
+            return destination // the tarball has no wrapping top directory → use destination itself
         }
         return top
     }

@@ -1,27 +1,27 @@
 import Foundation
 
-/// Metadata một nguồn skill — persist trong `sources.json`.
+/// The metadata of one skill source — persisted in `sources.json`.
 public struct SourceDescriptor: Sendable, Codable, Equatable, Identifiable {
     public enum Kind: String, Sendable, Codable { case github, local }
 
     /// GitHub: `gh/<owner>/<repo>` · Local: `local/<slug>`.
     public var id: String
     public var kind: Kind
-    /// GitHub: URL repo · Local: path tuyệt đối.
+    /// GitHub: the repo URL · Local: an absolute path.
     public var location: String
     public var addedAt: Date
     public var lastSync: Date?
-    /// Version đã sync gần nhất (commit sha / content hash).
+    /// The most recently synced version (commit sha or content hash).
     public var lastVersion: String?
-    /// ETag của lần gọi API trước → sync lần 2 thành no-op (304).
+    /// The ETag from the previous API call → a second sync becomes a no-op (304).
     public var etag: String?
-    /// Repo upstream đã archive → mọi skill của nguồn này bị flag deprecated.
+    /// The upstream repo was archived → every skill from this source is flagged deprecated.
     public var archived: Bool
     public var stars: Int?
     public var license: String?
     public var pushedAt: Date?
 
-    /// Namespace store cho skill thuộc nguồn này (`owner/repo` | `local/<slug>`).
+    /// The store namespace for skills from this source (`owner/repo` or `local/<slug>`).
     public var namespace: String {
         switch kind {
         case .github: return String(id.dropFirst("gh/".count))
@@ -46,21 +46,21 @@ public struct SourceDescriptor: Sendable, Codable, Equatable, Identifiable {
     }
 }
 
-/// Một skill lấy được từ nguồn (đã parse + validate structural).
+/// One skill fetched from a source (parsed and structurally validated).
 public struct FetchedSkill: Sendable {
     public let parsed: ParsedSkill
     public init(parsed: ParsedSkill) { self.parsed = parsed }
 }
 
 public struct SourceFetchResult: Sendable {
-    /// Version toàn nguồn (commit sha / content hash) — mọi skill trong lần fetch dùng chung.
+    /// The source-wide version (commit sha or content hash) — shared by every skill in one fetch.
     public var version: String
-    /// `false` = không đổi so với lần trước (ETag/hash trùng) → sync no-op.
+    /// `false` = unchanged since last time (matching ETag or hash) → the sync is a no-op.
     public var changed: Bool
     public var skills: [FetchedSkill]
-    /// Path SKILL.md bị bỏ qua kèm lý do (log cho user, không nuốt im lặng).
+    /// A skipped SKILL.md path plus the reason (logged for the user, never swallowed).
     public var skipped: [(path: String, reason: String)]
-    /// Descriptor cập nhật (etag, archived, stars...) để registry persist.
+    /// The updated descriptor (etag, archived, stars…) for the registry to persist.
     public var descriptor: SourceDescriptor
 
     public init(version: String, changed: Bool, skills: [FetchedSkill],
@@ -75,6 +75,6 @@ public struct SourceFetchResult: Sendable {
 
 public protocol SourceProvider: Sendable {
     var descriptor: SourceDescriptor { get }
-    /// Fetch trạng thái mới nhất. `staging` là thư mục tạm provider được phép ghi.
+    /// Fetches the latest state. `staging` is a temp directory the provider may write into.
     func fetch(staging: URL) async throws -> SourceFetchResult
 }

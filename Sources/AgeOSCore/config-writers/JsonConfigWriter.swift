@@ -1,8 +1,8 @@
 import Foundation
 
 /// Ghi config JSON (claude-code `~/.claude.json`, claude-desktop, antigravity).
-/// JSONSerialization giữ mọi key lạ; output sortedKeys (order chuẩn hóa —
-/// các file này vốn do máy ghi, không ai giữ order tay).
+/// JSONSerialization preserves every unknown key; output uses sortedKeys (a normalized order —
+/// these files are machine-written anyway, nobody maintains their order by hand).
 public struct JsonConfigWriter: ConfigWriter {
     public init() {}
 
@@ -29,7 +29,7 @@ public struct JsonConfigWriter: ConfigWriter {
         return (root[keyPath] as? [String: Any])?[name] != nil
     }
 
-    /// Đọc entry hiện có (để so sánh/hiển thị).
+    /// Reads the existing entry (for comparison or display).
     public func readEntry(name: String, keyPath: String, in file: URL) throws -> [String: Any]? {
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
         let root = try loadRoot(file)
@@ -50,13 +50,13 @@ public struct JsonConfigWriter: ConfigWriter {
 
     func loadRoot(_ file: URL) throws -> [String: Any] {
         guard let data = FileManager.default.contents(atPath: file.path) else {
-            return [:] // file chưa tồn tại → bắt đầu rỗng (sẽ tạo mới)
+            return [:] // the file does not exist yet → start empty and create it
         }
         let parsed: Any
         do {
             parsed = try JSONSerialization.jsonObject(with: data)
         } catch let error as NSError {
-            // Chỉ chỗ lỗi để user tự sửa — TUYỆT ĐỐI không ghi đè file hỏng.
+            // Point at the error so the user can fix it — NEVER overwrite a malformed file.
             let detail = (error.userInfo["NSDebugDescription"] as? String) ?? error.localizedDescription
             throw AgeOSError(.configUnreadable, "Config JSON is already malformed at \(file.path): \(detail)",
                              remedy: "Fix the file by hand (check commas and braces), then run again — AgeOS never overwrites a malformed file")

@@ -1,8 +1,8 @@
 import Foundation
 
-/// Client registry chính thức registry.modelcontextprotocol.io (API v0).
-/// Decode "khoan dung": schema registry còn tiến hóa — field lạ bỏ qua,
-/// thiếu field phụ không chết, chỉ bắt buộc name + description.
+/// A client for the official registry.modelcontextprotocol.io (API v0).
+/// Decoding is deliberately TOLERANT: the registry schema is still evolving — unknown fields
+/// are ignored, missing optional fields are survivable, and only name and description are required.
 public struct McpRegistrySource: Sendable {
     public static let defaultBaseURL = "https://registry.modelcontextprotocol.io"
     let baseURL: String
@@ -16,7 +16,7 @@ public struct McpRegistrySource: Sendable {
         self.baseURL = baseURL
     }
 
-    // MARK: - Wire types (subset khoan dung của server.json)
+    // MARK: - Wire types (a tolerant subset of server.json)
 
     struct ServerJSON: Decodable {
         var name: String
@@ -62,7 +62,7 @@ public struct McpRegistrySource: Sendable {
 
     struct ListResponse: Decodable {
         var servers: [Entry]
-        /// Registry gói server.json trong `{"server": {...}}` hoặc trả phẳng — chấp nhận cả hai.
+        /// The registry wraps server.json in `{"server": {...}}` or returns it flat — both are accepted.
         struct Entry: Decodable {
             var server: ServerJSON
 
@@ -101,7 +101,7 @@ public struct McpRegistrySource: Sendable {
         switch response.statusCode {
         case 200:
             try? cache(data: data, key: "server-\(name)")
-            // Endpoint chi tiết có thể trả object đơn hoặc versioned list — thử cả hai.
+            // The detail endpoint may return a single object or a versioned list — try both.
             if let single = try? JSONDecoder().decode(ListResponse.Entry.self, from: data),
                let model = Self.model(from: single.server) {
                 return model
@@ -128,7 +128,7 @@ public struct McpRegistrySource: Sendable {
         }
     }
 
-    /// server.json → model chạy được. Ưu tiên: npm → pypi → remote. Trả nil nếu không dựng nổi launch.
+    /// server.json → a runnable model. Preference: npm → pypi → remote. Returns nil when no launch can be built.
     static func model(from json: ServerJSON) -> McpServerModel? {
         let shortName = json.name.split(separator: "/").last.map(String.init) ?? json.name
         let envSchema = (json.packages?.first?.environmentVariables ?? []).map {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Danh sách nguồn đã add — persist `sources.json` (sorted, atomic).
+/// The list of added sources — persisted to `sources.json` (sorted, atomic).
 public struct SourcesRegistry: Sendable {
     public let home: AgeOSHome
 
@@ -27,7 +27,7 @@ public struct SourcesRegistry: Sendable {
         try AtomicFile.write(try encoder.encode(sources.sorted { $0.id < $1.id }), to: home.sourcesPath)
     }
 
-    /// Add mới hoặc trả về descriptor sẵn có (idempotent theo id).
+    /// Adds a new source, or returns the existing descriptor (idempotent by id).
     @discardableResult
     public func add(_ descriptor: SourceDescriptor) throws -> (descriptor: SourceDescriptor, isNew: Bool) {
         var sources = try load()
@@ -57,7 +57,7 @@ public struct SourcesRegistry: Sendable {
         return removed
     }
 
-    /// Dựng provider tương ứng kind.
+    /// Builds the provider matching the kind.
     public func provider(for descriptor: SourceDescriptor, http: HTTPClient = URLSessionHTTPClient()) -> any SourceProvider {
         switch descriptor.kind {
         case .github: return GitHubSource(descriptor: descriptor, http: http)

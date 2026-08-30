@@ -1,26 +1,26 @@
 import Foundation
 
-/// Hợp đồng ghi config client. Bất biến an toàn (mọi writer PHẢI giữ):
-/// 1. KHÔNG BAO GIỜ regenerate cả file — chỉ parse-merge entry của mình.
-/// 2. Key lạ/entry user giữ nguyên vẹn.
-/// 3. File hỏng sẵn → TỪ CHỐI ghi + chỉ chỗ lỗi (không phá thêm).
-/// 4. Ghi atomic; backup do McpManager làm TRƯỚC khi gọi writer.
+/// The contract for writing a client config. Safety invariants every writer MUST keep:
+/// 1. NEVER regenerate the whole file — only parse-merge our own entry.
+/// 2. Unknown keys and the user's own entries survive untouched.
+/// 3. An already-malformed file → REFUSE to write, and point at the error (do no further damage).
+/// 4. Write atomically; the backup is taken by McpManager BEFORE the writer is called.
 public protocol ConfigWriter: Sendable {
-    /// Thêm/cập nhật entry `name` dưới keyPath. Tạo file mới nếu chưa tồn tại.
+    /// Adds or updates the entry `name` under keyPath. Creates the file if it does not exist.
     func upsertEntry(name: String, launch: McpServerModel.Launch, keyPath: String, in file: URL) throws
-    /// Gỡ entry `name`. Không lỗi nếu entry không tồn tại (idempotent).
+    /// Removes the entry `name`. Not an error if it is absent (idempotent).
     func removeEntry(name: String, keyPath: String, in file: URL) throws
-    /// Entry `name` có tồn tại không (file không tồn tại → false).
+    /// Whether the entry `name` exists (a missing file means false).
     func hasEntry(name: String, keyPath: String, in file: URL) throws -> Bool
 }
 
-/// Backup config vào `~/.ageos/backups/<timestamp>/` trước MỌI lần ghi.
+/// Backs a client config up into `~/.ageos/backups/<timestamp>/` before EVERY write.
 public enum ConfigBackup {
     static let stampFormat: Date.ISO8601FormatStyle = .iso8601
 
-    /// Trả URL bản backup (nil nếu file gốc chưa tồn tại — không có gì để backup).
-    /// Backup KHÔNG BAO GIỜ đè backup cũ: stamp tới mili-giây + suffix khi vẫn trùng
-    /// (hai thao tác trong cùng giây từng làm restore lấy nhầm bản).
+    /// Returns the backup URL (nil when the original does not exist — nothing to back up).
+    /// A backup NEVER overwrites an older one: stamped to the millisecond, plus a suffix if
+    /// that still collides (two operations in the same second once made restore pick the wrong file).
     @discardableResult
     public static func backup(_ file: URL, home: AgeOSHome) throws -> URL? {
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
@@ -28,7 +28,7 @@ public enum ConfigBackup {
             .replacingOccurrences(of: ":", with: "-")
         let dir = home.backupsDir.appendingPathComponent(stamp, isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        // Encode path đầy đủ vào tên file để restore biết đường về.
+        // The full path is encoded into the filename so restore knows where it came from.
         let encoded = file.path.replacingOccurrences(of: "/", with: "%2F")
         var dest = dir.appendingPathComponent(encoded)
         var suffix = 1
@@ -54,7 +54,7 @@ public enum ConfigBackup {
             let dir = home.backupsDir.appendingPathComponent(stamp, isDirectory: true)
             guard let files = try? fm.contentsOfDirectory(atPath: dir.path) else { continue }
             for f in files.sorted() {
-                // Bỏ suffix chống trùng `.N` (nếu có) trước khi decode path gốc.
+                // Strip the anti-collision `.N` suffix, if any, before decoding the original path.
                 let base = f.replacingOccurrences(of: #"\.\d+$"#, with: "", options: .regularExpression)
                 let original = base.replacingOccurrences(of: "%2F", with: "/")
                 records.append(.init(timestamp: stamp, originalPath: original,
@@ -64,14 +64,14 @@ public enum ConfigBackup {
         return records
     }
 
-    /// Restore bản backup MỚI NHẤT của một file (hoặc của mọi file nếu `original == nil` thì lỗi — phải chỉ định).
+    /// Restores the MOST RECENT backup of one file (`original == nil` is an error — it must be named).
     public static func restoreLatest(of original: URL, home: AgeOSHome) throws -> BackupRecord {
         let matches = list(home: home).filter { $0.originalPath == original.path }
         guard let latest = matches.last else {
             throw AgeOSError(.notFound, "No backup exists for \(original.path)",
                              remedy: "List them with `ageos mcp restore-backup --list`")
         }
-        // Backup chính file hiện tại trước khi đè (revert cũng revert được).
+        // Back the current file up before overwriting it, so the revert can itself be reverted.
         _ = try? backup(original, home: home)
         let data = try Data(contentsOf: URL(fileURLWithPath: latest.backupPath))
         try AtomicFile.write(data, to: original)

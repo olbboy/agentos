@@ -16,22 +16,22 @@ struct AgeosCommand: AsyncParsableCommand {
     )
 }
 
-/// Exit codes nhất quán: 0 ok · 1 lỗi runtime · 64 usage (ArgumentParser tự xử lý usage).
+/// Consistent exit codes: 0 ok · 1 runtime error · 64 usage (ArgumentParser handles usage itself).
 enum CLIRuntime {
     static func makeEngine() throws -> SyncEngine {
         try SyncEngine(home: AgeOSHome())
     }
 
-    /// "1 skill" / "2 skills" — tiếng Anh chia số nhiều, tiếng Việt thì không.
+    /// "1 skill" / "2 skills" — English inflects for number, Vietnamese does not.
     ///
-    /// Bản tiếng Việt viết "\(n) skill" cho mọi n và không sai. Dịch sang tiếng Anh
-    /// làm lộ ra vấn đề đó, nên nó thuộc về việc dịch cho xong, không phải việc thêm
-    /// tính năng. Gom vào một chỗ để 10 call site không mỗi chỗ một kiểu.
+    /// The Vietnamese original wrote "\(n) skill" for every n and was correct. Translating to
+    /// English is what exposed the problem, so fixing it belongs to finishing the translation,
+    /// not to adding a feature. Gathered here so ten call sites do not each do it differently.
     static func count(_ n: Int, _ singular: String, plural: String? = nil) -> String {
         "\(n) \(n == 1 ? singular : (plural ?? singular + "s"))"
     }
 
-    /// In lỗi chuẩn stderr rồi thoát mã 1.
+    /// Prints the error to stderr and exits with code 1.
     static func fail(_ error: Error) -> Never {
         let text: String
         if let e = error as? AgeOSError {

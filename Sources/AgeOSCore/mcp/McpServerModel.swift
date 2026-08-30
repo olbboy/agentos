@@ -1,17 +1,17 @@
 import Foundation
 
-/// Một MCP server trong library — hợp nhất từ registry server.json, manifest .mcpb,
-/// hoặc khai báo tay. `launch` là thứ cuối cùng được ghi vào config client.
+/// One MCP server in the library — unified from a registry server.json, a .mcpb manifest,
+/// or a manual declaration. `launch` is what finally gets written into the client config.
 public struct McpServerModel: Sendable, Codable, Equatable {
     /// Id namespace: registry `io.github.owner/name`, mcpb/manual `local/<name>`.
     public var id: String
-    /// Tên entry trong config client (ngắn, không slash).
+    /// The entry name in the client config (short, no slashes).
     public var name: String
     public var description: String
     public var version: String
     public var source: String
     public var launch: Launch
-    /// Schema env từ nguồn — enable dùng để hỏi giá trị còn thiếu.
+    /// The env schema from the source — enable uses it to ask for missing values.
     public var envSchema: [EnvVar]
 
     public struct Launch: Sendable, Codable, Equatable {
@@ -22,7 +22,7 @@ public struct McpServerModel: Sendable, Codable, Equatable {
         public var args: [String]
         /// http/sse
         public var url: String?
-        /// Giá trị env đã điền (plaintext ở MVP — Keychain là v1.1).
+        /// The env values that were filled in (plaintext at MVP — Keychain is v1.1).
         public var env: [String: String]
 
         public init(transport: Transport, command: String? = nil, args: [String] = [],
@@ -60,7 +60,7 @@ public struct McpServerModel: Sendable, Codable, Equatable {
         self.envSchema = envSchema
     }
 
-    /// Env bắt buộc còn thiếu giá trị.
+    /// Required env that is still missing a value.
     public func missingRequiredEnv() -> [EnvVar] {
         envSchema.filter { $0.required && launch.env[$0.name] == nil }
     }
@@ -70,7 +70,7 @@ public struct McpServerModel: Sendable, Codable, Equatable {
     }
 }
 
-/// Kho model MCP đã add — persist `mcp-servers.json` trong home (nguồn chân lý file).
+/// The store of added MCP models — persisted to `mcp-servers.json` in the home (the file is the truth).
 public struct McpLibrary: Sendable {
     public let home: AgeOSHome
     var path: URL { home.root.appendingPathComponent("mcp-servers.json") }

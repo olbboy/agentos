@@ -1,7 +1,7 @@
 import Foundation
 
-/// Frontmatter của SKILL.md theo spec agentskills.io.
-/// Field lạ không bị vứt — giữ trong `extra` để round-trip và cho scanner dùng sau.
+/// The frontmatter of SKILL.md, per the agentskills.io spec.
+/// Unknown fields are not discarded — they stay in `extra` so they round-trip and the scanner can use them later.
 public struct SkillManifest: Sendable, Codable, Equatable {
     public var name: String
     public var description: String
@@ -9,7 +9,7 @@ public struct SkillManifest: Sendable, Codable, Equatable {
     public var allowedTools: [String]?
     public var metadata: [String: String]
     public var deprecated: Bool
-    /// Field ngoài spec (stringified) — ví dụ `version`, `author`.
+    /// Fields outside the spec (stringified) — for example `version`, `author`.
     public var extra: [String: String]
 
     public init(
@@ -31,12 +31,12 @@ public struct SkillManifest: Sendable, Codable, Equatable {
     }
 }
 
-/// Một skill đã parse: manifest + nội dung body + vị trí trên đĩa.
+/// A parsed skill: manifest, body content, and where it sits on disk.
 public struct ParsedSkill: Sendable, Equatable {
     public var manifest: SkillManifest
     public var body: String
     public var directory: URL
-    /// Tiêu đề H1 đầu tiên trong body (nếu có) — dùng cho hiển thị.
+    /// The first H1 in the body, if any — used for display.
     public var title: String?
 
     public init(manifest: SkillManifest, body: String, directory: URL, title: String? = nil) {

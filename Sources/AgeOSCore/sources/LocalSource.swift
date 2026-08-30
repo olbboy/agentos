@@ -1,8 +1,8 @@
 import Foundation
 import CryptoKit
 
-/// Nguồn local: một thư mục trên đĩa chứa 1..n skill.
-/// Version = hash nội dung (deterministic) — đổi file là ra version mới.
+/// A local source: one directory on disk holding one or more skills.
+/// The version is a content hash (deterministic) — change a file and you get a new version.
 public struct LocalSource: SourceProvider {
     public let descriptor: SourceDescriptor
 
@@ -38,7 +38,7 @@ public struct LocalSource: SourceProvider {
                                  skipped: scan.skipped, descriptor: updated)
     }
 
-    /// Hash ổn định trên (tên + toàn bộ file trong từng skill dir, sort theo path).
+    /// A stable hash over the name plus every file in each skill directory, sorted by path.
     func contentHash(of skills: [ParsedSkill]) -> String {
         var hasher = SHA256()
         let fm = FileManager.default
