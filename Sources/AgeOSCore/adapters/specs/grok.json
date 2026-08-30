@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "grok",
+  "displayName": "Grok CLI",
+  "detect": ["~/.grok"],
+  "skills": {
+    "globalPath": "~/.grok/skills",
+    "projectPath": ".agents/skills",
+    "compatPaths": ["~/.agents/skills", "~/.claude/skills", "~/.grok/bundled/skills", "~/.claude/plugins/marketplaces"],
+    "folderSymlink": true,
+    "fileSymlink": true,
+    "preferredMode": "symlink",
+    "verified": true
+  },
+  "mcp": {
+    "configPath": "~/.grok/config.toml",
+    "format": "toml",
+    "keyPath": "mcp_servers",
+    "verified": true
+  },
+  "budget": {
+    "catalogTokensWarn": 15000,
+    "descriptionTruncateChars": 0
+  },
+  "notes": "Đo 2026-08-30 qua `grok inspect --json` (1.0.13): folder-symlink + file-symlink đều discover; đọc thêm ~/.agents/skills, compat ~/.claude/skills, bundled skills và Claude plugin cache (230 skills tổng). Precedence dedup: ~/.grok/skills > ~/.agents/skills > ~/.claude/skills. MCP: [mcp_servers.<name>] trong ~/.grok/config.toml (docs bundled 07-mcp-servers.md); grok cũng merge MCP từ ~/.claude.json ở chế độ compat — effective-load scanner phải tính cả nguồn đó."
+}

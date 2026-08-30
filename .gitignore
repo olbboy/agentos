@@ -1,0 +1,10 @@
+.DS_Store
+/.build
+/spike/HelloMCP/.build
+/*.xcodeproj
+xcuserdata/
+DerivedData/
+.swiftpm/
+*.profraw
+apps/AgeOS/AgeOS.xcodeproj/
+dist/

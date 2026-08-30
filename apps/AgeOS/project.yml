@@ -1,0 +1,70 @@
+# Sinh AgeOS.xcodeproj bằng: xcodegen generate (chạy trong apps/AgeOS/)
+# Bundle id đang là placeholder — chốt lại khi tạo repo public (Phase 7).
+name: AgeOS
+options:
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  AgeOSPackage:
+    path: ../..
+
+targets:
+  AgeOS:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+    dependencies:
+      - package: AgeOSPackage
+        product: AgeOSCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.owner.ageos
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        INFOPLIST_KEY_CFBundleDisplayName: AgeOS
+        COMBINE_HIDPI_IMAGES: YES
+
+  AgeOSTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests
+    dependencies:
+      - target: AgeOS
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/AgeOS.app/Contents/MacOS/AgeOS"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+  AgeOSUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - UITests
+    dependencies:
+      - target: AgeOS
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: AgeOS
+
+schemes:
+  AgeOS:
+    build:
+      targets:
+        AgeOS: all
+    test:
+      targets:
+        - AgeOSTests
+        - AgeOSUITests

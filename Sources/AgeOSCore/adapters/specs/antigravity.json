@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "antigravity",
+  "displayName": "Antigravity",
+  "detect": ["~/.gemini/antigravity", "~/.gemini"],
+  "skills": {
+    "globalPath": "~/.gemini/config/skills",
+    "projectPath": ".agents/skills",
+    "compatPaths": ["~/.gemini/skills"],
+    "folderSymlink": true,
+    "fileSymlink": false,
+    "preferredMode": "symlink",
+    "verified": false
+  },
+  "mcp": {
+    "configPath": "~/.gemini/config/mcp_config.json",
+    "format": "json",
+    "keyPath": "mcpServers",
+    "verified": true
+  },
+  "budget": {
+    "catalogTokensWarn": 15000,
+    "descriptionTruncateChars": 0
+  },
+  "notes": "Phân xử 2026-08-30 bằng FS evidence: ~/.gemini/config/skills là path thật (chứa symlink được tool khác cài chủ đích 7/8, nằm cạnh mcp_config.json); ~/.gemini/skills là legacy gemini-cli (batch Jun/8) — giữ làm compat path cho effective-load. Không có CLI headless để verify discovery → verified:false, doctor re-verify runtime. mcp_config.json tồn tại đúng schema mcpServers."
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "codex",
+  "displayName": "Codex CLI",
+  "detect": ["~/.codex"],
+  "skills": {
+    "globalPath": "~/.codex/skills",
+    "projectPath": ".agents/skills",
+    "compatPaths": ["~/.agents/skills"],
+    "folderSymlink": true,
+    "fileSymlink": false,
+    "preferredMode": "copy",
+    "verified": true
+  },
+  "mcp": {
+    "configPath": "~/.codex/config.toml",
+    "format": "toml",
+    "keyPath": "mcp_servers",
+    "verified": true
+  },
+  "budget": {
+    "catalogTokensWarn": 15000,
+    "descriptionTruncateChars": 160
+  },
+  "notes": "Đo 2026-08-30 qua `codex debug prompt-input` (0.150.1): folder-symlink DISCOVERED (probe phân lập trong ~/.codex/skills), file-symlink KHÔNG discover (khớp openai/codex#8369) → preferredMode=copy giữ theo quyết định validate; cân nhắc flip sang symlink (data update, không cần release) sau khi theo dõi #8369. Codex cắt description ~160 chars trong catalog prompt. Cũng đọc ~/.agents/skills (universal) và project .agents/skills."
+}

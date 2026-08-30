@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "claude-desktop",
+  "displayName": "Claude Desktop",
+  "detect": ["~/Library/Application Support/Claude"],
+  "skills": null,
+  "mcp": {
+    "configPath": "~/Library/Application Support/Claude/claude_desktop_config.json",
+    "format": "json",
+    "keyPath": "mcpServers",
+    "verified": true
+  },
+  "budget": {
+    "catalogTokensWarn": 10000,
+    "descriptionTruncateChars": 0
+  },
+  "notes": "MCP-only target (không có skills dir). Config verified 2026-08-30: file tồn tại với entry mcpServers thật của user. Ghi config phải parse-merge + backup — file này do app Claude Desktop đồng sở hữu."
+}

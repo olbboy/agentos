@@ -1,0 +1,102 @@
+import Foundation
+
+/// Ghép các mảnh intelligence thành một lần quét: effective-load → dedupe
+/// (exact + near) → deprecated → lint. STATIC ONLY — không execute gì từ skill.
+public struct ScanEngine: Sendable {
+    public let home: AgeOSHome
+    public let adapters: AdapterRegistry
+    public let index: IndexDB
+    public var dedupe: DedupeEngine
+
+    public init(home: AgeOSHome, adapters: AdapterRegistry, index: IndexDB,
+                dedupe: DedupeEngine = DedupeEngine()) {
+        self.home = home
+        self.adapters = adapters
+        self.index = index
+        self.dedupe = dedupe
+    }
+
+    public struct ScanReport: Sendable, Codable {
+        public var scannedSkills: Int
+        public var exactDupes: [DedupeEngine.DupePair]
+        public var nearDupes: [DedupeEngine.DupePair]
+        /// nil = máy không có embedding assets (near-dupe bị bỏ qua, đã ghi chú).
+        public var nearDupeAvailable: Bool
+        public var deprecated: [DeprecatedItem]
+        public var lintFindings: [LintItem]
+        public var notes: [String]
+
+        public struct DeprecatedItem: Sendable, Codable {
+            public var id: String
+            public var reason: String
+        }
+
+        public struct LintItem: Sendable, Codable {
+            public var id: String
+            public var findings: [DescriptionLinter.Finding]
+        }
+    }
+
+    public func run() throws -> ScanReport {
+        var notes: [String] = []
+
+        // 1) Thu thập item từ effective-load (mọi path mọi agent) + dedup theo path canonical.
+        let scanner = EffectiveLoadScanner(adapters: adapters)
+        let inventory = scanner.scan()
+        var itemsByPath: [String: DedupeEngine.Item] = [:]
+        for agent in inventory.agents {
+            for entry in agent.entries {
+                let canonical = entry.path.canonicalFilePath
+                guard itemsByPath[canonical] == nil else { continue }
+                let dir = URL(fileURLWithPath: entry.path, isDirectory: true)
+                if let parsed = try? SkillParser.parse(directory: dir) {
+                    itemsByPath[canonical] = .from(parsed, id: "\(entry.name) @ \(entry.path)")
+                }
+            }
+        }
+        let items = itemsByPath.values.sorted { $0.id < $1.id }
+
+        // 2) Dedupe.
+        let exact = dedupe.exactDupes(items)
+        let near: [DedupeEngine.DupePair]
+        let nearAvailable: Bool
+        if let n = dedupe.nearDupes(items) {
+            // Loại cặp đã dính exact (near luôn chứa exact vì cosine ~1 sau centering).
+            let exactKeys = Set(exact.map { "\($0.a)|\($0.b)" })
+            near = n.filter { !exactKeys.contains("\($0.a)|\($0.b)") }
+            nearAvailable = true
+        } else {
+            near = []
+            nearAvailable = false
+            notes.append("Embedding assets không khả dụng — near-dupe bị bỏ qua (chỉ exact)")
+        }
+
+        // 3) Deprecated: index (repo archived) + frontmatter.
+        var deprecated: [ScanReport.DeprecatedItem] = []
+        for row in (try? index.listSkills()) ?? [] where row.deprecated {
+            deprecated.append(.init(id: row.id, reason: "nguồn archived hoặc frontmatter deprecated"))
+        }
+        for item in items {
+            if let dir = item.directory, let parsed = try? SkillParser.parse(directory: dir),
+               parsed.manifest.deprecated {
+                let id = item.id
+                if !deprecated.contains(where: { $0.id == id }) {
+                    deprecated.append(.init(id: id, reason: "frontmatter deprecated: true"))
+                }
+            }
+        }
+
+        // 4) Lint description (chỉ báo các skill CÓ finding).
+        var lintItems: [ScanReport.LintItem] = []
+        for item in items {
+            let findings = DescriptionLinter.lint(name: item.name, description: item.description)
+            if !findings.isEmpty {
+                lintItems.append(.init(id: item.id, findings: findings))
+            }
+        }
+
+        return ScanReport(scannedSkills: items.count, exactDupes: exact, nearDupes: near,
+                          nearDupeAvailable: nearAvailable, deprecated: deprecated,
+                          lintFindings: lintItems, notes: notes)
+    }
+}

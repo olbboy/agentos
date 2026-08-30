@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  core:
+    name: Core build + test (SPM)
+    # Cần Xcode 26 / Swift 6.3. Nếu image macos-26 chưa khả dụng trên GitHub,
+    # đổi sang image mới nhất có Xcode 26 (xem README runner-images).
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)/Contents/Developer" \
+            || echo "Dùng Xcode mặc định của image"
+          xcodebuild -version
+      - name: Cache SPM
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test
+
+  app:
+    name: App build (không nằm trong required checks)
+    runs-on: macos-26
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Generate + build app
+        working-directory: apps/AgeOS
+        run: |
+          xcodegen generate
+          xcodebuild -project AgeOS.xcodeproj -scheme AgeOS -configuration Debug \
+            CODE_SIGN_IDENTITY=- build

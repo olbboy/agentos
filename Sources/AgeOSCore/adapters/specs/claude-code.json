@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "claude-code",
+  "displayName": "Claude Code",
+  "detect": ["~/.claude"],
+  "skills": {
+    "globalPath": "~/.claude/skills",
+    "projectPath": ".claude/skills",
+    "compatPaths": ["~/.claude/plugins/marketplaces"],
+    "folderSymlink": true,
+    "fileSymlink": false,
+    "preferredMode": "symlink",
+    "verified": true
+  },
+  "mcp": {
+    "configPath": "~/.claude.json",
+    "projectConfigPath": ".mcp.json",
+    "format": "json",
+    "keyPath": "mcpServers",
+    "verified": true
+  },
+  "budget": {
+    "catalogTokensWarn": 20000,
+    "descriptionTruncateChars": 0
+  },
+  "notes": "Folder-symlink (absolute + relative) verified 2026-08-30 qua natural experiment: 22 symlink đang được load trong session Claude Code thật. fileSymlink chưa đo (không dùng — LinkEngine luôn ưu tiên folder-symlink khi folderSymlink=true). Plugin cache là compat path chỉ để effective-load scan, không phải target ghi."
+}

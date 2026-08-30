@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Run release lane
+        env:
+          # Ký + notarize chỉ chạy khi repo có secrets tương ứng; thiếu → unsigned.
+          AGEOS_SIGN_IDENTITY: ${{ secrets.AGEOS_SIGN_IDENTITY }}
+          AGEOS_NOTARY_PROFILE: ${{ secrets.AGEOS_NOTARY_PROFILE }}
+        run: ./scripts/release-lane.sh "${GITHUB_REF_NAME}"
+      - name: Upload artifacts to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/checksums.txt
+          generate_release_notes: true

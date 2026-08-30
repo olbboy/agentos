@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "universal-agents",
+  "displayName": "Universal (~/.agents/skills)",
+  "detect": ["~/.agents"],
+  "skills": {
+    "globalPath": "~/.agents/skills",
+    "projectPath": ".agents/skills",
+    "compatPaths": [],
+    "folderSymlink": true,
+    "fileSymlink": false,
+    "preferredMode": "symlink",
+    "verified": true
+  },
+  "mcp": null,
+  "budget": {
+    "catalogTokensWarn": 15000,
+    "descriptionTruncateChars": 0
+  },
+  "notes": "Thư mục chuẩn agentskills.io được nhiều agent đọc chung. Verified 2026-08-30: codex (higgsfield-* chỉ nằm ở đây vẫn vào prompt) + grok (goose-* resolve từ đây). Cursor/OpenCode hưởng ké theo docs (chưa verify máy thật). Enable vào đây = phủ mọi agent đọc universal dir bằng 1 link."
+}
