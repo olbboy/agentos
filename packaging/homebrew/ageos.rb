@@ -1,5 +1,7 @@
-# Cask cho tap olbboy/homebrew-tap — sha256 của AgeOS-v0.1.0.zip (release 30/8/2026).
-# Chưa ký Developer ID → hướng dẫn user: brew install --cask ageos --no-quarantine
+# Cask for the olbboy/homebrew-tap. sha256 is of the released AgeOS-vX.Y.Z.zip.
+# Unsigned (no Developer ID): Homebrew removed --no-quarantine, so a blocked app
+# is cleared with:
+#   find /Applications/AgeOS.app -exec xattr -d com.apple.quarantine {} \; 2>/dev/null
 cask "ageos" do
   version "0.1.0"
   sha256 "15ce470f6ba668a0a3dea55f481187cac0e8cce02c498ae3f7f4673e1d229952"
