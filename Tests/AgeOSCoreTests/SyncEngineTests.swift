@@ -6,7 +6,7 @@ import Testing
 struct SyncEngineTests {
     @Test func localSourceEndToEnd() async throws {
         try await withTempHome { home in
-            // Nguồn local có 2 skill.
+            // A local source holding two skills.
             let src = home.root.appendingPathComponent("my-skills-src")
             try makeSkillDir(in: src, name: "skill-one", description: "first local skill end to end")
             try makeSkillDir(in: src, name: "skill-two", description: "second local skill end to end")
@@ -17,16 +17,16 @@ struct SyncEngineTests {
             #expect(report.changed)
             #expect(report.installed.count == 2)
 
-            // Index có đủ 2 skill.
+            // The index holds both skills.
             let listed = try engine.index.listSkills()
             #expect(listed.map(\.name).sorted() == ["skill-one", "skill-two"])
 
-            // Sync lần 2 không đổi → no-op.
+            // A second sync with nothing changed → a no-op.
             let second = try await engine.sync(sourceId: descriptor.id)
             #expect(second.count == 1)
             #expect(second[0].changed == false)
 
-            // Sửa nội dung → version mới, current swap.
+            // Change the content → a new version, and current swaps to it.
             try "---\nname: skill-one\ndescription: EDITED description now different\n---\nbody"
                 .write(to: src.appendingPathComponent("skill-one/SKILL.md"), atomically: true, encoding: .utf8)
             let third = try await engine.sync(sourceId: descriptor.id)
@@ -45,7 +45,7 @@ struct SyncEngineTests {
             _ = try await engine.addSource(src.path)
             #expect(try engine.index.listSkills().count == 1)
 
-            // Mất index.sqlite → reindex khôi phục từ filesystem.
+            // Lose index.sqlite → reindex restores it from the filesystem.
             try FileManager.default.removeItem(at: home.indexPath)
             engine = try SyncEngine(home: home)
             try engine.index.rebuild(home: home, store: engine.store, registry: engine.registry)

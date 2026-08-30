@@ -44,7 +44,7 @@ struct JsonConfigWriterTests {
         #expect(ours["command"] as? String == "npx")
         #expect((ours["env"] as? [String: String])?["FOO"] == "bar")
 
-        // Remove chỉ gỡ entry mình; user entry + key lạ còn nguyên.
+        // Remove takes out only our entry; the user's entry and unknown keys survive.
         try writer.removeEntry(name: "ageos-added", keyPath: "mcpServers", in: file)
         let after = try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as! [String: Any]
         let serversAfter = after["mcpServers"] as! [String: Any]
@@ -60,7 +60,7 @@ struct JsonConfigWriterTests {
         #expect(throws: AgeOSError.self) {
             try writer.upsertEntry(name: "x", launch: launch, keyPath: "mcpServers", in: file)
         }
-        // File hỏng không bị đụng vào.
+        // The malformed file is left untouched.
         #expect(try Data(contentsOf: file) == before)
     }
 
@@ -115,7 +115,7 @@ struct TomlConfigWriterTests {
         try writer.upsertEntry(name: "ageos-added", launch: launch, keyPath: "mcp_servers", in: file)
 
         let text = try String(contentsOf: file, encoding: .utf8)
-        #expect(text.contains("model") && text.contains("gpt-5.6-sol")) // TOMLKit có thể đổi kiểu quote
+        #expect(text.contains("model") && text.contains("gpt-5.6-sol")) // TOMLKit may change the quote style
         #expect(text.contains("[profiles.work]") || text.contains("profiles.work") || text.contains("[profiles]"))
         #expect(text.contains("user-server"))
         #expect(text.contains("ageos-added"))
@@ -130,7 +130,7 @@ struct TomlConfigWriterTests {
 
     @Test func warnsWhenFileHasComments() throws {
         let file = try tempFile("""
-        # comment quý giá của user
+        # a comment the user cares about
         [mcp_servers.existing]
         command = "x"
         """)

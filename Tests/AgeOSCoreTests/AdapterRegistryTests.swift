@@ -9,9 +9,9 @@ struct AdapterRegistryTests {
             let registry = try AdapterRegistry(home: home)
             let ids = Set(registry.adapters.map(\.id))
             for expected in ["claude-code", "codex", "grok", "antigravity", "claude-desktop", "universal-agents"] {
-                #expect(ids.contains(expected), "thiếu adapter bundled: \(expected)")
+                #expect(ids.contains(expected), "missing bundled adapter: \(expected)")
             }
-            // Số liệu spike phải nằm trong data: codex không nhận file-symlink, grok nhận cả hai.
+            // The spike findings have to live in the data: codex does not accept file symlinks, grok accepts both.
             let codex = try registry.adapter(id: "codex")
             #expect(codex.skills?.fileSymlink == false)
             #expect(codex.skills?.folderSymlink == true)

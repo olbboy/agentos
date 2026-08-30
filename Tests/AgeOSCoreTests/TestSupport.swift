@@ -6,7 +6,7 @@ func fixturesDir() -> URL {
     Bundle.module.resourceURL!.appendingPathComponent("Fixtures", isDirectory: true)
 }
 
-/// Chạy body với AGEOS_HOME tạm — không test nào được đụng home thật.
+/// Runs the body with a temporary AGEOS_HOME — no test may ever touch the real home.
 func withTempHome<T>(_ body: (AgeOSHome) async throws -> T) async throws -> T {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("ageos-test-\(UUID().uuidString.prefix(8))", isDirectory: true)
@@ -37,7 +37,7 @@ struct MockHTTPClient: HTTPClient {
 
     func get(_ url: URL, headers: [String: String]) async throws -> (data: Data, response: HTTPURLResponse) {
         guard let stub = stubs[url.absoluteString] else {
-            throw AgeOSError(.network, "MockHTTPClient: không có stub cho \(url.absoluteString)")
+            throw AgeOSError(.network, "MockHTTPClient: no stub for \(url.absoluteString)")
         }
         let response = HTTPURLResponse(url: url, statusCode: stub.status, httpVersion: "HTTP/1.1",
                                        headerFields: stub.headers)!
@@ -45,7 +45,7 @@ struct MockHTTPClient: HTTPClient {
     }
 }
 
-/// Tạo skill dir tạm với SKILL.md nội dung cho trước.
+/// Creates a temporary skill directory with the given SKILL.md content.
 @discardableResult
 func makeSkillDir(in parent: URL, name: String, description: String, body: String = "# Test\n") throws -> URL {
     let dir = parent.appendingPathComponent(name, isDirectory: true)
@@ -61,7 +61,7 @@ func makeSkillDir(in parent: URL, name: String, description: String, body: Strin
     return dir
 }
 
-/// Đóng gói một thư mục thành tar.gz (mô phỏng tarball GitHub có top-dir).
+/// Packs a directory into a tar.gz (mimicking a GitHub tarball with its top directory).
 func makeTarball(of dir: URL, topDirName: String) throws -> URL {
     let staging = FileManager.default.temporaryDirectory
         .appendingPathComponent("tarball-\(UUID().uuidString.prefix(8))", isDirectory: true)

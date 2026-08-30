@@ -20,7 +20,7 @@ struct LockfileTests {
             let reloaded = try Lockfile.load(from: home.lockfilePath)
             #expect(reloaded == lock)
 
-            // Ghi 2 lần phải ra byte y hệt (sorted keys) — diff git sạch.
+            // Writing twice must produce identical bytes (sorted keys) — so git diffs stay clean.
             try reloaded.save(to: home.lockfilePath)
             let a = FileManager.default.contents(atPath: home.lockfilePath.path)
             try lock.save(to: home.lockfilePath)

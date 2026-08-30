@@ -35,6 +35,9 @@ struct SkillParserTests {
         }
     }
 
+    /// The Vietnamese text and the emoji below are FIXTURE DATA, not leftovers from the
+    /// translation. This test exists to prove non-ASCII content survives a parse round trip,
+    /// so replacing them with English would delete the only thing it checks.
     @Test func unicodeSurvivesRoundtrip() throws {
         let parsed = try SkillParser.parse(directory: fixturesDir().appendingPathComponent("unicode-skill"))
         #expect(parsed.manifest.description.contains("tiếng Việt"))
@@ -59,7 +62,7 @@ struct SkillParserTests {
         #expect(names.contains("alpha"))
         #expect(names.contains("beta"))
         #expect(names.contains("valid-skill"))
-        // broken-yaml + missing-name + no-frontmatter phải nằm trong skipped, không nuốt im lặng.
+        // broken-yaml, missing-name and no-frontmatter must all appear in skipped, never swallowed.
         #expect(output.skipped.count >= 3)
     }
 }

@@ -4,14 +4,14 @@ import Testing
 
 @Suite("EffectiveLoadScanner")
 struct EffectiveLoadTests {
-    /// Success criterion #1 Phase 5: 1 skill xuất hiện 3 path / 2 agent → map chỉ đúng cả 3.
+    /// One skill appearing at 3 paths across 2 agents → the map names all three correctly.
     @Test func mapsDuplicateLoadsAcrossPathsAndAgents() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
             let shared = home.root.appendingPathComponent("shared-compat/skills", isDirectory: true)
             try FileManager.default.createDirectory(at: shared, withIntermediateDirectories: true)
 
-            // sym-agent đọc thêm shared (compat); copy-agent cũng đọc shared.
+            // sym-agent also reads shared (a compat path); copy-agent reads shared too.
             for id in ["sym-agent", "copy-agent"] {
                 let path = home.adaptersDir.appendingPathComponent("\(id).json")
                 var text = try String(contentsOf: path, encoding: .utf8)
@@ -21,7 +21,7 @@ struct EffectiveLoadTests {
                 try text.write(to: path, atomically: true, encoding: .utf8)
             }
 
-            // Skill "dup-me" ở: sym-agent global + copy-agent global + shared compat.
+            // The skill "dup-me" lives at: sym-agent global, copy-agent global, and shared compat.
             try makeSkillDir(in: world.agentRoot.appendingPathComponent("sym-agent/skills"),
                              name: "dup-me", description: "duplicated across many load paths for testing")
             try makeSkillDir(in: world.agentRoot.appendingPathComponent("copy-agent/skills"),
@@ -35,10 +35,10 @@ struct EffectiveLoadTests {
             let inventory = scanner.scan()
 
             let sym = inventory.agents.first { $0.adapterId == "sym-agent" }!
-            #expect(sym.duplicated["dup-me"]?.count == 2) // global + compat trong CÙNG agent
+            #expect(sym.duplicated["dup-me"]?.count == 2) // global plus compat within the SAME agent
             #expect(inventory.byName["dup-me"]?.sorted() == ["copy-agent", "sym-agent"])
             #expect(inventory.byName["unique-one"] == ["sym-agent"])
-            // Tổng load entries của dup-me trên toàn hệ = 4 (2 agent × (global| + compat shared))
+            // Total load entries for dup-me across the system = 4 (2 agents × (global + shared compat))
             let totalDupEntries = inventory.agents.flatMap(\.entries).filter { $0.name == "dup-me" }.count
             #expect(totalDupEntries == 4)
         }
@@ -49,7 +49,7 @@ struct EffectiveLoadTests {
             let world = try FakeAgentWorld.setUp(home: home)
             let engine = try SyncEngine(home: home)
 
-            // 1 skill do AgeOS quản lý (enable từ library) + 1 skill user tự cài.
+            // One skill managed by AgeOS (enabled from the library) plus one the user installed.
             let src = home.root.appendingPathComponent("src")
             try makeSkillDir(in: src, name: "managed-one", description: "installed and managed by ageos")
             _ = try await engine.addSource(src.path)
@@ -63,7 +63,7 @@ struct EffectiveLoadTests {
             let report = try await scanner.adoptImport(home: home, engine: engine)
             #expect(report.imported == ["hand-installed"])
             #expect(report.skippedManaged >= 1)
-            // Đã vào index qua nguồn local/adopted; bản gốc còn nguyên.
+            // It reached the index through the local/adopted source; the original is untouched.
             let row = try engine.index.findSkill(id: "local/adopted/hand-installed")
             #expect(row != nil)
             #expect(FileManager.default.fileExists(
@@ -100,16 +100,16 @@ struct DedupeTests {
         #expect(pairs[0].a == "c1" && pairs[0].b == "c2")
     }
 
-    /// Success criterion #2 Phase 5: cặp near bị bắt, cặp khác nghĩa không false-positive.
+    /// A near-duplicate pair is caught while an unrelated pair is not a false positive.
     @Test func nearCatchesParaphraseNotDistinct() {
         let engine = DedupeEngine()
         guard let pairs = engine.nearDupes(items()) else {
-            // Máy CI không có assets → degrade có chủ đích, exact vẫn chạy.
+            // A CI machine has no assets → a deliberate degrade, with exact detection still running.
             return
         }
         let keys = Set(pairs.map { "\($0.a)|\($0.b)" })
-        #expect(keys.contains("a1|a2"), "cặp paraphrase phải bị bắt; pairs=\(pairs)")
-        #expect(!keys.contains { $0.contains("b1") }, "pg-replication khác nghĩa hoàn toàn, không được dính: \(pairs)")
+        #expect(keys.contains("a1|a2"), "the paraphrase pair must be caught; pairs=\(pairs)")
+        #expect(!keys.contains { $0.contains("b1") }, "pg-replication is completely unrelated and must not stick: \(pairs)")
     }
 }
 
@@ -140,7 +140,7 @@ struct QualityScorerTests {
                                                 sourcePushedAt: pushed, sourceLicense: "MIT",
                                                 installCount: 12_000), now: fixedNow)
         // Snapshot: metadata 20 + lint 20 + resources 5 + body 10 + stars 12 + fresh 10 + installs 10 = 87
-        #expect(score.total == 87, "điểm drift: \(score.explain)")
+        #expect(score.total == 87, "score drifted: \(score.explain)")
         #expect(score.classification == "devops")
         #expect(score.classificationMethod.contains("keyword"))
     }
@@ -154,7 +154,7 @@ struct QualityScorerTests {
         defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
         let parsed = try SkillParser.parse(directory: dir)
         let score = QualityScorer().score(.init(parsed: parsed))
-        #expect(score.total < 40, "skill nghèo nàn phải điểm thấp: \(score.total)")
+        #expect(score.total < 40, "a threadbare skill must score low: \(score.total)")
     }
 }
 
@@ -163,7 +163,7 @@ struct BudgetMeterTests {
     @Test func tokenMathAndTruncationAndThreshold() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
-            // Thêm budget block: copy-agent cắt desc 100 chars, ngưỡng warn 30 tokens (thấp để trigger).
+            // Add a budget block: copy-agent truncates the description at 100 chars, warn threshold 30 tokens (low, to trigger).
             let path = home.adaptersDir.appendingPathComponent("copy-agent.json")
             var text = try String(contentsOf: path, encoding: .utf8)
             text = text.replacingOccurrences(of: "\"budget\": null",
@@ -181,7 +181,7 @@ struct BudgetMeterTests {
             #expect(report.totalTokens > 30)
             #expect(report.warnings.contains { $0.contains("exceeds the") })
 
-            // Không truncate (sym-agent): desc đủ 400.
+            // No truncation (sym-agent): the description keeps all 400.
             try makeSkillDir(in: world.agentRoot.appendingPathComponent("sym-agent/skills"),
                              name: "long-desc", description: longDesc)
             let symReport = try meter.compute(adapterId: "sym-agent")
@@ -192,8 +192,8 @@ struct BudgetMeterTests {
 
 @Suite("Static-only guarantee")
 struct NoExecuteTests {
-    /// Success criterion #4 Phase 5: scan KHÔNG spawn bất kỳ process nào từ nội dung skill.
-    /// Proxy thực nghiệm: skill chứa script tự ghi marker nếu bị chạy → marker phải vắng.
+    /// The scan NEVER spawns a process from a skill's content.
+    /// The experimental proxy: a skill carrying a script that writes a marker if it runs → the marker must be absent.
     @Test func scanNeverExecutesSkillContent() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
@@ -213,7 +213,7 @@ struct NoExecuteTests {
             try "#!/bin/sh\ntouch \(marker.path)\n".write(to: payload, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: payload.path)
 
-            // Chạy TOÀN BỘ pipeline intelligence trên skill bẫy.
+            // Run the WHOLE intelligence pipeline over the booby-trapped skill.
             let adapters = try world.registry()
             let engine = try SyncEngine(home: home)
             _ = EffectiveLoadScanner(adapters: adapters).scan()
@@ -223,7 +223,7 @@ struct NoExecuteTests {
             _ = try BudgetMeter(adapters: adapters).compute(adapterId: "sym-agent")
 
             #expect(!FileManager.default.fileExists(atPath: marker.path),
-                    "CÓ THỨ GÌ ĐÓ đã execute nội dung skill trong lúc scan!")
+                    "SOMETHING executed the skill's content during the scan!")
         }
     }
 }

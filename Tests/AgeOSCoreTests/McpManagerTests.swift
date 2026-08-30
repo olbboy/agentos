@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import AgeOSCore
 
-/// Fake world MCP: 3 client giả (2 JSON + 1 TOML) với config path trong temp home.
+/// A fake MCP world: three fake clients (two JSON, one TOML) with config paths inside a temp home.
 struct FakeMcpWorld {
     let home: AgeOSHome
     let clientsRoot: URL
@@ -47,17 +47,17 @@ let testModel = McpServerModel(
     id: "io.github.test/echo", name: "echo", description: "test server",
     version: "1.0.0", source: "test",
     launch: .init(transport: .stdio, command: "npx", args: ["-y", "echo-mcp"]),
-    envSchema: [.init(name: "API_KEY", description: "khóa", required: true, secret: true)]
+    envSchema: [.init(name: "API_KEY", description: "key", required: true, secret: true)]
 )
 
 @Suite("McpManager enable/disable 3 client")
 struct McpManagerTests {
-    /// Success criterion #1 Phase 4: enable cùng server cho 3 client, format đúng từng client,
-    /// key lạ còn nguyên, có backup.
+    /// The same server enabled for three clients, each in its own format,
+    /// with unknown keys preserved and a backup taken.
     @Test func enableToThreeClientsWithCorrectFormats() async throws {
         try await withTempHome { home in
             let world = try FakeMcpWorld.setUp(home: home)
-            // json-a có sẵn config với key lạ + entry user.
+            // json-a already has a config carrying an unknown key plus a user entry.
             try """
             {"existingSetting": true, "mcpServers": {"user-owned": {"command": "bun"}}}
             """.write(to: world.config("json-a.json"), atomically: true, encoding: .utf8)
@@ -73,12 +73,12 @@ struct McpManagerTests {
             let o1 = try manager.enable(query: "echo", adapterId: "json-a", envOverrides: ["API_KEY": "sk-test"])
             let o2 = try manager.enable(query: "echo", adapterId: "json-b", envOverrides: ["API_KEY": "sk-test"])
             let o3 = try manager.enable(query: "echo", adapterId: "toml-c", envOverrides: ["API_KEY": "sk-test"])
-            #expect(o1.backupPath != nil)   // json-a có file sẵn → phải có backup
-            #expect(o2.backupPath == nil)   // json-b chưa có file → không có gì để backup
+            #expect(o1.backupPath != nil)   // json-a had a file → a backup is required
+            #expect(o2.backupPath == nil)   // json-b had no file → nothing to back up
             #expect(o3.sensitiveEnv == ["API_KEY"])
             #expect(o1.note?.contains("PLAINTEXT") == true)
 
-            // json-a: key lạ + entry user nguyên vẹn, entry mình đúng format.
+            // json-a: the unknown key and user entry are intact, and our entry is in the right format.
             let rootA = try JSONSerialization.jsonObject(with: Data(contentsOf: world.config("json-a.json"))) as! [String: Any]
             #expect(rootA["existingSetting"] as? Bool == true)
             let serversA = rootA["mcpServers"] as! [String: Any]
@@ -87,19 +87,19 @@ struct McpManagerTests {
             #expect(mine["command"] as? String == "npx")
             #expect((mine["env"] as? [String: String])?["API_KEY"] == "sk-test")
 
-            // toml-c: giữ model + user entry, thêm mình.
+            // toml-c: the model and user entry survive, and ours is added.
             let tomlText = try String(contentsOf: world.config("toml-c.toml"), encoding: .utf8)
-            #expect(tomlText.contains("model") && tomlText.contains("grok-4")) // TOMLKit có thể đổi kiểu quote
+            #expect(tomlText.contains("model") && tomlText.contains("grok-4")) // TOMLKit may change the quote style
             #expect(tomlText.contains("user-toml"))
             #expect(tomlText.contains("echo"))
 
-            // Lockfile ghi nhận 3 target + sensitiveEnv.
+            // The lockfile records three targets plus sensitiveEnv.
             let lock = try Lockfile.load(from: home.lockfilePath)
             let entry = lock.mcpServers["io.github.test/echo"]
             #expect(entry?.targets.count == 3)
             #expect(entry?.sensitiveEnv == ["API_KEY"])
 
-            // Disable json-a: chỉ gỡ entry mình.
+            // Disabling json-a removes only our entry.
             _ = try manager.disable(query: "echo", adapterId: "json-a")
             let afterA = try JSONSerialization.jsonObject(with: Data(contentsOf: world.config("json-a.json"))) as! [String: Any]
             let serversAfter = afterA["mcpServers"] as! [String: Any]
@@ -115,7 +115,7 @@ struct McpManagerTests {
             try manager.library.upsert(testModel)
             do {
                 _ = try manager.enable(query: "echo", adapterId: "json-b")
-                Issue.record("Phải chặn khi thiếu env bắt buộc")
+                Issue.record("It must refuse when required env is missing")
             } catch let e as AgeOSError {
                 #expect(e.message.contains("API_KEY"))
                 #expect(e.remedy?.contains("--env") == true)
@@ -132,11 +132,11 @@ struct McpManagerTests {
             try manager.library.upsert(testModel)
             do {
                 _ = try manager.enable(query: "echo", adapterId: "json-b", envOverrides: ["API_KEY": "x"])
-                Issue.record("Phải chặn khi entry trùng tên của user")
+                Issue.record("It must refuse when the name collides with a user entry")
             } catch let e as AgeOSError {
                 #expect(e.code == .conflict)
             }
-            // Entry user nguyên vẹn.
+            // The user's entry is intact.
             let root = try JSONSerialization.jsonObject(with: Data(contentsOf: world.config("json-b.json"))) as! [String: Any]
             #expect(((root["mcpServers"] as! [String: Any])["echo"] as! [String: Any])["command"] as? String == "user-thing")
         }
@@ -164,17 +164,17 @@ struct McpManagerTests {
             try manager.library.upsert(testModel)
             _ = try manager.enable(query: "echo", adapterId: "json-b", envOverrides: ["API_KEY": "x"])
 
-            // Còn enabled → từ chối, entry giữ nguyên.
+            // Still enabled → refuse, and leave the entry in place.
             do {
                 _ = try manager.removeFromLibrary(query: "echo")
-                Issue.record("Phải chặn remove khi server còn enabled")
+                Issue.record("Remove must refuse while the server is still enabled")
             } catch let e as AgeOSError {
                 #expect(e.code == .conflict)
                 #expect(e.remedy?.contains("disable") == true)
             }
             #expect(try manager.library.load().count == 1)
 
-            // Disable xong → remove sạch.
+            // Once disabled, remove goes through cleanly.
             _ = try manager.disable(query: "echo", adapterId: "json-b")
             let removed = try manager.removeFromLibrary(query: "echo")
             #expect(removed.id == "io.github.test/echo")
@@ -192,7 +192,7 @@ struct McpManagerTests {
             try manager.library.upsert(testModel)
             _ = try manager.enable(query: "echo", adapterId: "json-b", envOverrides: ["API_KEY": "x"])
 
-            // Config đã đổi; restore đưa về nguyên bản.
+            // The config was changed; restore puts the original back.
             let restored = try ConfigBackup.restoreLatest(of: world.config("json-b.json"), home: home)
             #expect(restored.originalPath == world.config("json-b.json").path)
             let text = try String(contentsOf: world.config("json-b.json"), encoding: .utf8)

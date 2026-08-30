@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import AgeOSCore
 
-@Suite("Store version hóa")
+@Suite("Store versioning")
 struct StoreTests {
     @Test func installSetCurrentAndSwap() throws {
         try withTempHomeSync { home in
@@ -15,7 +15,7 @@ struct StoreTests {
             try store.setCurrent(ref, version: "aaa111")
             #expect(store.currentVersion(ref) == "aaa111")
 
-            // Version mới → swap atomic; current đổi đích, version cũ vẫn còn cho tới khi GC.
+            // A new version → an atomic swap; current changes destination and the old version stays until GC.
             let staging2 = home.cacheDir.appendingPathComponent("stage2")
             try makeSkillDir(in: staging2, name: "demo", description: "v2 updated description")
             try store.installVersion(ref, version: "bbb222", from: staging2.appendingPathComponent("demo"))
@@ -23,7 +23,7 @@ struct StoreTests {
             #expect(store.currentVersion(ref) == "bbb222")
             #expect(store.installedVersions(ref).sorted() == ["aaa111", "bbb222"])
 
-            // Đọc xuyên qua `current` phải ra nội dung v2.
+            // Reading through `current` must return the v2 content.
             let parsed = try SkillParser.parse(directory: store.currentLink(ref))
             #expect(parsed.manifest.description.contains("v2"))
 

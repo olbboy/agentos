@@ -4,7 +4,7 @@ import Testing
 
 @Suite("HealthCheck stdio")
 struct HealthCheckTests {
-    /// Server MCP giả bằng python3: trả lời initialize + tools/list đúng protocol.
+    /// A fake MCP server in python3: answers initialize and tools/list per the protocol.
     func makeFakeServer() throws -> URL {
         let script = FileManager.default.temporaryDirectory
             .appendingPathComponent("fake-mcp-\(UUID().uuidString.prefix(8)).py")
@@ -57,7 +57,7 @@ struct HealthCheckTests {
     }
 
     @Test func hangingServerHitsTimeoutAndGetsKilled() throws {
-        // Server "treo": đọc stdin nhưng không bao giờ trả lời.
+        // A "hanging" server: it reads stdin and never answers.
         let script = FileManager.default.temporaryDirectory
             .appendingPathComponent("hang-\(UUID().uuidString.prefix(8)).py")
         try "import time\nwhile True: time.sleep(1)\n".write(to: script, atomically: true, encoding: .utf8)
@@ -66,8 +66,8 @@ struct HealthCheckTests {
         let started = Date()
         let report = HealthCheck.run(launch, timeout: 3)
         #expect(!report.ok)
-        #expect(Date().timeIntervalSince(started) < 10) // timeout + kill grace, không treo mãi
-        // Không process mồ côi: python script này phải chết sau run().
+        #expect(Date().timeIntervalSince(started) < 10) // timeout plus kill grace — it must not hang forever
+        // No orphaned process: this python script has to be dead after run().
         let check = Process()
         check.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
         check.arguments = ["-f", script.lastPathComponent]
@@ -77,7 +77,7 @@ struct HealthCheckTests {
         check.waitUntilExit()
         let survivors = String(data: out.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
         #expect(survivors.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                "process mồ côi còn sống: \(survivors)")
+                "orphaned process still alive: \(survivors)")
     }
 
     @Test func httpTransportIsSkippedInMvp() {
@@ -92,7 +92,7 @@ struct HealthCheckTests {
 struct McpbImporterTests {
     @Test func importsBundleAndResolvesDirname() async throws {
         try await withTempHome { home in
-            // Dựng bundle .mcpb: manifest + payload, nén bằng ditto.
+            // Build an .mcpb bundle: manifest plus payload, zipped with ditto.
             let stage = home.root.appendingPathComponent("bundle-src", isDirectory: true)
             try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: true)
             try #"""
@@ -116,7 +116,7 @@ struct McpbImporterTests {
             #expect(model.id == "local/my-fancy-server")
             #expect(model.version == "2.1.0")
             #expect(model.launch.command == "node")
-            // ${__dirname} resolve vào library, và file thật sự nằm đó.
+            // ${__dirname} resolves into the library, and the file really is there.
             let arg = model.launch.args[0]
             #expect(arg.contains("/library/mcp/local/my-fancy-server/2.1.0"))
             #expect(FileManager.default.fileExists(atPath: arg))

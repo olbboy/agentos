@@ -4,7 +4,7 @@ import Testing
 
 @Suite("Scan performance")
 struct ScanPerfTests {
-    /// Non-functional Phase 5: scan 500 skills < 30s trên M-series (gồm cả embedding near-dupe).
+    /// Scanning 500 skills stays under 30s on Apple silicon (including embedding near-duplicate detection).
     @Test(.timeLimit(.minutes(1)))
     func fiveHundredSkillsUnderThirtySeconds() async throws {
         try await withTempHome { home in
@@ -20,7 +20,7 @@ struct ScanPerfTests {
             let report = try ScanEngine(home: home, adapters: try world.registry(), index: engine.index).run()
             let elapsed = Date().timeIntervalSince(started)
             #expect(report.scannedSkills == 500)
-            #expect(elapsed < 30, "scan 500 skills mất \(elapsed)s — vượt ngân sách 30s")
+            #expect(elapsed < 30, "scanning 500 skills took \(elapsed)s — over the 30s budget")
         }
     }
 }

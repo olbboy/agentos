@@ -2,12 +2,12 @@ import Foundation
 import Testing
 @testable import AgeOSCore
 
-/// Regression tests cho các finding của code review 30/8/2026.
-/// Mỗi test tương ứng một bug ĐÃ TỪNG TỒN TẠI — không được xanh trên code cũ.
+/// Regression tests for the findings of a code review.
+/// Each one corresponds to a bug that ONCE EXISTED — none of them may pass against the old code.
 @Suite("Review regressions")
 struct ReviewRegressionTests {
-    /// Critical: isOurs từng so path lockfile với chính nó (hằng-đúng) →
-    /// disable xóa nhầm thư mục user thay chỗ symlink AgeOS.
+    /// Critical: isOurs used to compare a lockfile path against itself (always true), so
+    /// disable deleted a user's directory that had replaced an AgeOS symlink.
     @Test func disableRefusesUserReplacedContent() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
@@ -19,7 +19,7 @@ struct ReviewRegressionTests {
             let ref = SkillRef(id: "local/src/swapped")!
             _ = try linkEngine.enable(ref, sourceId: "local/src", adapterId: "sym-agent")
 
-            // User: xóa symlink AgeOS, đặt thư mục THẬT của họ vào đúng chỗ (không marker).
+            // The user deletes the AgeOS symlink and puts their OWN real directory in its place (no marker).
             let dest = world.symSkillPath("swapped")
             try FileManager.default.removeItem(at: dest)
             try makeSkillDir(in: dest.deletingLastPathComponent(), name: "swapped",
@@ -27,17 +27,17 @@ struct ReviewRegressionTests {
 
             do {
                 _ = try linkEngine.disable(ref, adapterId: "sym-agent")
-                Issue.record("disable phải từ chối khi đích không phải của AgeOS")
+                Issue.record("disable must refuse when the destination does not belong to AgeOS")
             } catch let error as AgeOSError {
                 #expect(error.code == .conflict)
             }
-            // Đồ user sống sót.
+            // The user's files survive.
             let survived = try SkillParser.parse(directory: dest)
             #expect(survived.manifest.description.contains("precious user content"))
         }
     }
 
-    /// Cùng lớp bug ở phía enable: re-enable khi user đã thay đích phải CHẶN, không đè.
+    /// The same class of bug on the enable side: re-enabling over a destination the user replaced must STOP, not overwrite.
     @Test func reenableRefusesUserReplacedContent() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
@@ -62,7 +62,7 @@ struct ReviewRegressionTests {
         }
     }
 
-    /// Propagate copy-mode: đích mất manifest (user thay) → bỏ qua + cảnh báo, không re-copy đè.
+    /// Copy-mode propagation: a destination missing its manifest (the user replaced it) → skip and warn, never re-copy over it.
     @Test func propagateSkipsUserReplacedCopy() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
@@ -74,13 +74,13 @@ struct ReviewRegressionTests {
             let ref = SkillRef(id: "local/src/taken-copy")!
             _ = try linkEngine.enable(ref, sourceId: "local/src", adapterId: "copy-agent")
 
-            // User thay TOÀN BỘ bản copy (mất manifest + marker).
+            // The user replaces the ENTIRE copy (losing the manifest and marker).
             let dest = world.copySkillPath("taken-copy")
             try FileManager.default.removeItem(at: dest)
             try makeSkillDir(in: dest.deletingLastPathComponent(), name: "taken-copy",
                              description: "fully user-owned now, no manifest")
 
-            // Nguồn ra version mới → sync → KHÔNG được đè.
+            // The source produces a new version → sync → it must NOT overwrite.
             try "---\nname: taken-copy\ndescription: upstream v2 that must not clobber\n---\nx"
                 .write(to: src.appendingPathComponent("taken-copy/SKILL.md"), atomically: true, encoding: .utf8)
             let reports = try await engine.sync()
@@ -90,8 +90,8 @@ struct ReviewRegressionTests {
         }
     }
 
-    /// High: lockfile RMW race — N enable đồng thời (mô phỏng CLI + ageos-mcp song song)
-    /// không được đánh mất entry nào nhờ flock.
+    /// High: a lockfile read-modify-write race — N concurrent enables (simulating the CLI and
+    /// ageos-mcp running side by side) must not lose a single entry, thanks to flock.
     @Test func concurrentEnablesKeepAllLockfileEntries() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
@@ -116,22 +116,22 @@ struct ReviewRegressionTests {
 
             let lock = try Lockfile.load(from: home.lockfilePath)
             #expect(lock.skills.count == count,
-                    "mất entry vì race: còn \(lock.skills.count)/\(count) — \(lock.skills.keys.sorted())")
+                    "entries lost to a race: \(lock.skills.count)/\(count) remain — \(lock.skills.keys.sorted())")
         }
     }
 
-    /// Medium: server chết ngay sau spawn → health fail NHANH, không đợi trọn timeout.
+    /// Medium: a server dying right after spawn → health fails FAST, without waiting out the timeout.
     @Test func earlyCrashFailsFast() {
         let launch = McpServerModel.Launch(transport: .stdio, command: "/usr/bin/false", args: [])
         let started = Date()
         let report = HealthCheck.run(launch, timeout: 10)
         let elapsed = Date().timeIntervalSince(started)
         #expect(!report.ok)
-        #expect(elapsed < 5, "crash sớm mà tốn \(elapsed)s — phải fail nhanh qua EOF")
+        #expect(elapsed < 5, "an early crash took \(elapsed)s — it must fail fast on EOF")
     }
 
-    /// Medium: cơ chế near-dupe (centering + threshold + pairing) phải test được
-    /// DETERMINISTIC không cần embedding assets (chống phantom test trên CI).
+    /// Medium: the near-duplicate mechanism (centering, threshold, pairing) has to be testable
+    /// DETERMINISTICALLY without embedding assets, so CI does not run a phantom test.
     @Test func nearDupeMechanismWithSyntheticVectors() {
         let items = [
             DedupeEngine.Item(id: "s1", name: "a", description: "d", bodyHead: ""),
@@ -139,20 +139,20 @@ struct ReviewRegressionTests {
             DedupeEngine.Item(id: "s3", name: "c", description: "d", bodyHead: ""),
             DedupeEngine.Item(id: "s4", name: "e", description: "d", bodyHead: ""),
         ]
-        // Anisotropy nhân tạo: mọi vector chung offset lớn [10,10,10];
-        // s1↔s2 gần nhau, s3 lệch hướng khác, s4 trung tính.
+        // Artificial anisotropy: every vector shares a large [10,10,10] offset;
+        // s1 and s2 sit close together, s3 points elsewhere, s4 is neutral.
         let vectors: [[Double]] = [
             [10.9, 10.1, 10.0],
             [10.8, 10.2, 10.0],
             [10.0, 10.9, 10.8],
             [10.3, 10.4, 10.5],
         ]
-        // Raw cosine (không centering) coi mọi cặp là ~1.0 — kiểm chứng tiền đề spike:
+        // Raw cosine (without centering) rates every pair at ~1.0 — this verifies the spike's premise:
         #expect(DedupeEngine.cosine(vectors[0], vectors[2]) > 0.99)
 
         let pairs = DedupeEngine(nearThreshold: 0.9).nearDupes(items, precomputedVectors: vectors)
         let keys = Set((pairs ?? []).map { "\($0.a)|\($0.b)" })
-        #expect(keys.contains("s1|s2"), "cặp gần nhau sau centering phải bị bắt: \(keys)")
-        #expect(!keys.contains("s1|s3"), "cặp lệch hướng không được dính: \(keys)")
+        #expect(keys.contains("s1|s2"), "a pair that is close after centering must be caught: \(keys)")
+        #expect(!keys.contains("s1|s3"), "a pair pointing elsewhere must not stick: \(keys)")
     }
 }

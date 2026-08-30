@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import AgeOSCore
 
-@Suite("GitHubSource qua mock HTTP")
+@Suite("GitHubSource over a mocked HTTP client")
 struct GitHubSourceTests {
     @Test func descriptorParsing() throws {
         for input in ["https://github.com/Owner/Repo", "github.com/owner/repo/", "owner/repo.git", "owner/repo"] {
@@ -29,7 +29,7 @@ struct GitHubSourceTests {
 
     @Test func fetchInstallsSkillsFromTarball() async throws {
         try await withTempHome { home in
-            // Repo giả: 1 skill, đóng tarball như GitHub (top-dir owner-repo-sha).
+            // A fake repo: one skill, packed like GitHub does (a top dir named owner-repo-sha).
             let repoDir = home.root.appendingPathComponent("fake-repo")
             try makeSkillDir(in: repoDir, name: "gh-skill", description: "skill delivered via fake github tarball")
             let sha = "abcdef1234567890abcdef1234567890abcdef12"
@@ -43,7 +43,7 @@ struct GitHubSourceTests {
             #expect(reports[0].version == String(sha.prefix(12)))
             #expect(reports[0].installed == ["owner/repo/gh-skill"])
 
-            // Sync lần 2 cùng sha → no-op, không cần tarball.
+            // A second sync at the same sha → a no-op, with no tarball needed.
             let again = try await engine.sync()
             #expect(again[0].changed == false)
         }
@@ -74,7 +74,7 @@ struct GitHubSourceTests {
             try engine.registry.add(GitHubSource.makeDescriptor(url: "owner/repo"))
             do {
                 _ = try await engine.sync()
-                Issue.record("Phải ném lỗi rate-limit")
+                Issue.record("It must throw a rate-limit error")
             } catch let error as AgeOSError {
                 #expect(error.code == .rateLimited)
                 #expect(error.remedy?.contains("GITHUB_TOKEN") == true)

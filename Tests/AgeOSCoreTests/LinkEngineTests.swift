@@ -2,12 +2,12 @@ import Foundation
 import Testing
 @testable import AgeOSCore
 
-/// Dựng fake home + fake agent + adapter JSON (không đụng máy thật, không đụng bundled).
+/// Builds a fake home, fake agents and adapter JSON (never touching the real machine or the bundled specs).
 struct FakeAgentWorld {
     let home: AgeOSHome
     let agentRoot: URL
 
-    /// Tạo 2 adapter giả: sym-agent (symlink) + copy-agent (copy), path trong temp.
+    /// Creates two fake adapters: sym-agent (symlink) and copy-agent (copy), both pathed into temp.
     static func setUp(home: AgeOSHome) throws -> FakeAgentWorld {
         let agentRoot = home.root.appendingPathComponent("fake-agents", isDirectory: true)
         let fm = FileManager.default
@@ -51,8 +51,8 @@ struct FakeAgentWorld {
 
 @Suite("LinkEngine enable/disable/propagate")
 struct LinkEngineTests {
-    /// Success criterion #1 Phase 3: cùng version enable symlink + copy;
-    /// update version → CẢ HAI nhận bản mới.
+    /// The same version enabled as both a symlink and a copy;
+    /// updating the version → BOTH receive the new build.
     @Test func symlinkAndCopyShareVersionAndBothUpdate() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
@@ -68,13 +68,13 @@ struct LinkEngineTests {
             #expect(symOut.mode == "symlink")
             #expect(copyOut.mode == "copy")
 
-            // Symlink là link thật trỏ vào store; copy là dir thật có manifest + marker.
+            // The symlink is a real link into the store; the copy is a real directory with a manifest and marker.
             let fm = FileManager.default
             #expect((try? fm.destinationOfSymbolicLink(atPath: world.symSkillPath("shared").path)) != nil)
             #expect(CopySync.readManifest(at: world.copySkillPath("shared")) != nil)
             #expect(ManagedMarker.isSet(on: world.copySkillPath("shared").path))
 
-            // Đổi nội dung nguồn → sync → cả hai target đọc ra bản mới.
+            // Change the source content → sync → both targets read the new build.
             try "---\nname: shared\ndescription: distribution test skill v2 UPDATED\n---\nbody v2"
                 .write(to: src.appendingPathComponent("shared/SKILL.md"), atomically: true, encoding: .utf8)
             let reports = try await engine.sync()
@@ -88,7 +88,7 @@ struct LinkEngineTests {
         }
     }
 
-    /// Success criterion #2: không đụng file user — trùng tên → dừng + báo; disable sạch.
+    /// Never touch the user's files — a name collision stops and reports; disable cleans up after itself.
     @Test func neverOverwritesUserFilesAndDisableIsClean() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
@@ -99,20 +99,20 @@ struct LinkEngineTests {
             let linkEngine = LinkEngine(home: home, store: engine.store, adapters: try world.registry())
             let ref = SkillRef(id: "local/src/mine")!
 
-            // User đã tự tạo skill trùng tên (không marker).
+            // The user already created a skill with the same name (no marker).
             try makeSkillDir(in: world.agentRoot.appendingPathComponent("sym-agent/skills"),
                              name: "mine", description: "user handmade skill, must survive")
             do {
                 _ = try linkEngine.enable(ref, sourceId: "local/src", adapterId: "sym-agent")
-                Issue.record("Enable phải từ chối khi đích là đồ user")
+                Issue.record("Enable must refuse when the destination belongs to the user")
             } catch let error as AgeOSError {
                 #expect(error.code == .conflict)
             }
-            // Đồ user còn nguyên.
+            // The user's files are untouched.
             let userSkill = try SkillParser.parse(directory: world.symSkillPath("mine"))
             #expect(userSkill.manifest.description.contains("handmade"))
 
-            // Enable vào copy-agent rồi disable → đích biến mất, lockfile sạch, đồ user vẫn nguyên.
+            // Enable on copy-agent then disable → the destination is gone, the lockfile is clean, the user's files remain.
             _ = try linkEngine.enable(ref, sourceId: "local/src", adapterId: "copy-agent")
             _ = try linkEngine.disable(ref, adapterId: "copy-agent")
             #expect(!FileManager.default.fileExists(atPath: world.copySkillPath("mine").path))
@@ -133,15 +133,15 @@ struct LinkEngineTests {
             let ref = SkillRef(id: "local/src/drifty")!
             _ = try linkEngine.enable(ref, sourceId: "local/src", adapterId: "copy-agent")
 
-            // User sửa bản copy.
+            // The user edited the copy.
             try "user edits: keep me!".write(to: world.copySkillPath("drifty").appendingPathComponent("NOTES.md"),
                                             atomically: true, encoding: .utf8)
-            // Nguồn ra version mới.
+            // The source produces a new version.
             try "---\nname: drifty\ndescription: upstream v2 must not clobber\n---\nbody"
                 .write(to: src.appendingPathComponent("drifty/SKILL.md"), atomically: true, encoding: .utf8)
             let reports = try await engine.sync()
             #expect(reports[0].driftWarnings.count == 1)
-            // File user thêm còn nguyên, description CHƯA bị đè.
+            // The file the user added survives, and the description was NOT overwritten.
             let onDisk = try SkillParser.parse(directory: world.copySkillPath("drifty"))
             #expect(!onDisk.manifest.description.contains("v2"))
             #expect(FileManager.default.fileExists(atPath: world.copySkillPath("drifty").appendingPathComponent("NOTES.md").path))
@@ -163,7 +163,7 @@ struct LinkEngineTests {
             let out1 = try linkEngine.enable(ref, sourceId: "local/src", adapterId: "sym-agent", project: project)
             #expect(out1.scope == "project")
             #expect(out1.path == project.appendingPathComponent(".agents/skills/proj-skill").path)
-            // Enable lại (idempotent) — không lỗi, path giữ nguyên.
+            // Enable again (idempotent) — no error, and the path is unchanged.
             let out2 = try linkEngine.enable(ref, sourceId: "local/src", adapterId: "sym-agent", project: project)
             #expect(out2.path == out1.path)
 
@@ -172,7 +172,7 @@ struct LinkEngineTests {
         }
     }
 
-    /// Success criterion #4: thêm agent mới CHỈ bằng file JSON.
+    /// A new agent can be added with NOTHING but a JSON file.
     @Test func newAgentByJSONOnly() async throws {
         try await withTempHome { home in
             let world = try FakeAgentWorld.setUp(home: home)
