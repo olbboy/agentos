@@ -1,0 +1,479 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ for %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ for %2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld MCP ≈%lld tk" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld MCP ≈%2$lld tk"
+          }
+        }
+      }
+    },
+    "%lld agents" : {
+
+    },
+    "%lld errors" : {
+
+    },
+    "%lld errors · %lld warnings · %lld info" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld errors · %2$lld warnings · %3$lld info"
+          }
+        }
+      }
+    },
+    "%lld imported" : {
+
+    },
+    "%lld info" : {
+
+    },
+    "%lld not measured" : {
+
+    },
+    "%lld skills ≈%lld tk" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld skills ≈%2$lld tk"
+          }
+        }
+      }
+    },
+    "%lld tools · %lldms · ≈%lldtk" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld tools · %2$lldms · ≈%3$lldtk"
+          }
+        }
+      }
+    },
+    "%lld warnings" : {
+
+    },
+    "A section title long enough to test how the header wraps" : {
+
+    },
+    "Action required" : {
+
+    },
+    "Adapters" : {
+
+    },
+    "Add & Sync" : {
+
+    },
+    "Add a GitHub source or a local folder to get started." : {
+
+    },
+    "Add a source" : {
+
+    },
+    "Add a source: https://github.com/owner/repo, or a local path" : {
+
+    },
+    "Add one from the CLI: ageos mcp add <registry-name|file.mcpb>" : {
+
+    },
+    "Add the source and sync it" : {
+
+    },
+    "AgeOS" : {
+
+    },
+    "AgeOS found skills already installed on this Mac. Import them to manage every agent from one library." : {
+
+    },
+    "AgeOS — %lld skills managed" : {
+
+    },
+    "All sources" : {
+
+    },
+    "Always-loaded catalog tokens per agent, on one shared scale." : {
+
+    },
+    "Always-loaded catalog tokens, per agent." : {
+
+    },
+    "An agent folder changed outside AgeOS" : {
+
+    },
+    "Available" : {
+
+    },
+    "Broken" : {
+
+    },
+    "Budget numbers are estimates, ±20% (4 bytes per token, measured in a spike)." : {
+
+    },
+    "Bundled specs ship with AgeOS. Drop JSON files in ~/.ageos/adapters/ to override them or add an agent." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Clear the search or the filters to see the whole library." : {
+
+    },
+    "Compare" : {
+
+    },
+    "Context Budget" : {
+
+    },
+    "Context budget" : {
+
+    },
+    "Copy every skill you installed yourself into the local/adopted source? The originals are left untouched." : {
+
+    },
+    "Deprecated only" : {
+
+    },
+    "Diagnostics" : {
+
+    },
+    "Diagnostics compares the lockfile against what is actually on disk, and scans every loaded skill for duplicates, deprecation and description problems." : {
+
+    },
+    "Disable everywhere" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Dismiss the error message" : {
+
+    },
+    "Distribution" : {
+
+    },
+    "Each skill costs its name plus its description (truncated the way that agent truncates it) plus about 30 characters of surrounding format, divided by 4 bytes per token. That puts the estimate within roughly ±20%. To check it yourself: toggle a skill on and off, then compare /context in that agent." : {
+
+    },
+    "Enabled" : {
+
+    },
+    "Enabled somewhere" : {
+
+    },
+    "Error" : {
+
+    },
+    "Errors" : {
+
+    },
+    "Errors mean distribution is actually broken. Warnings mean state has drifted and will surprise you later. Info is description quality — it never affects whether a skill loads." : {
+
+    },
+    "Every server in the library is enabled somewhere." : {
+
+    },
+    "Everything healthy" : {
+
+    },
+    "Filter" : {
+
+    },
+    "Filter skills" : {
+
+    },
+    "Fixable" : {
+
+    },
+    "Fixed" : {
+
+    },
+    "Go to Library to add a source." : {
+
+    },
+    "Health" : {
+
+    },
+    "Health check %@" : {
+
+    },
+    "How these numbers are produced" : {
+
+    },
+    "Import" : {
+
+    },
+    "Import failed" : {
+
+    },
+    "Import into library" : {
+
+    },
+    "Import result" : {
+
+    },
+    "Import unmanaged skills" : {
+
+    },
+    "Info" : {
+
+    },
+    "Last sync: %@" : {
+
+    },
+    "Library" : {
+
+    },
+    "Library (%lld)" : {
+
+    },
+    "Library is empty" : {
+
+    },
+    "Load entries" : {
+
+    },
+    "MCP Servers" : {
+
+    },
+    "MCP servers" : {
+
+    },
+    "Measure" : {
+
+    },
+    "Measure budget" : {
+
+    },
+    "Measure the budget again" : {
+
+    },
+    "Never synced" : {
+
+    },
+    "No MCP server is enabled on any client yet." : {
+
+    },
+    "No MCP servers yet" : {
+
+    },
+    "No automatic fix" : {
+
+    },
+    "No errors" : {
+
+    },
+    "No problems found" : {
+
+    },
+    "No skills in the library yet" : {
+
+    },
+    "No sources yet. Add one from the Library screen." : {
+
+    },
+    "No suggestions" : {
+
+    },
+    "No warnings" : {
+
+    },
+    "Not checked" : {
+
+    },
+    "Not checked yet" : {
+
+    },
+    "Not checked yet. Run diagnostics to look for broken links, duplicates and drift." : {
+
+    },
+    "Not measured yet" : {
+
+    },
+    "Not measured yet. Measuring reads each agent's catalog and estimates its token cost." : {
+
+    },
+    "Nothing here can be repaired automatically." : {
+
+    },
+    "Nothing is broken yet, but it will surprise you." : {
+
+    },
+    "Nothing matches" : {
+
+    },
+    "Open AgeOS" : {
+
+    },
+    "Opens Context Budget" : {
+
+    },
+    "Opens Diagnostics" : {
+
+    },
+    "Overview" : {
+
+    },
+    "Press Measure budget to run it." : {
+
+    },
+    "Quit AgeOS" : {
+
+    },
+    "Re-measure" : {
+
+    },
+    "Repair" : {
+
+    },
+    "Repair %lld findings" : {
+
+    },
+    "Repair all fixable (%lld)" : {
+
+    },
+    "Rerun" : {
+
+    },
+    "Rerun scan" : {
+
+    },
+    "Rescan this Mac" : {
+
+    },
+    "Reveal in Finder" : {
+
+    },
+    "Run a doctor check" : {
+
+    },
+    "Run diagnostics" : {
+
+    },
+    "Run doctor" : {
+
+    },
+    "Runs doctor --fix. It re-links, re-copies and cleans orphans across every target at once — it cannot be limited to one finding." : {
+
+    },
+    "Scanning this Mac…" : {
+
+    },
+    "Search skills" : {
+
+    },
+    "Skill" : {
+
+    },
+    "Source" : {
+
+    },
+    "Source URL or local path" : {
+
+    },
+    "Sources" : {
+
+    },
+    "Start here" : {
+
+    },
+    "Sync" : {
+
+    },
+    "Sync all sources" : {
+
+    },
+    "Sync every source" : {
+
+    },
+    "Target Matrix" : {
+
+    },
+    "These values sit in plaintext inside the client config. Keychain storage lands in v1.1." : {
+
+    },
+    "Three things are actually broken." : {
+
+    },
+    "Top consumers" : {
+
+    },
+    "Warnings" : {
+
+    },
+    "a deliberately long label that wraps to two lines" : {
+
+    },
+    "a very long status label that should truncate cleanly" : {
+
+    },
+    "agents detected" : {
+
+    },
+    "deprecated" : {
+
+    },
+    "distinct skills" : {
+
+    },
+    "enabled in %lld agents" : {
+
+    },
+    "filters active" : {
+
+    },
+    "loaded in 2+ agents" : {
+
+    },
+    "managed by AgeOS" : {
+
+    },
+    "no filters" : {
+
+    },
+    "no threshold set" : {
+
+    },
+    "not enabled" : {
+
+    },
+    "not enabled anywhere" : {
+
+    },
+    "not measured" : {
+
+    },
+    "off" : {
+
+    },
+    "on" : {
+
+    },
+    "over threshold" : {
+
+    },
+    "plaintext env: %@" : {
+
+    }
+  },
+  "version" : "1.0"
+}

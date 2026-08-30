@@ -31,6 +31,11 @@ targets:
         INFOPLIST_KEY_NSPrincipalClass: NSApplication
         INFOPLIST_KEY_CFBundleDisplayName: AgeOS
         COMBINE_HIDPI_IMAGES: YES
+        # Bắt buộc bật tay: project do xcodegen sinh KHÔNG thừa hưởng mặc định
+        # của template Xcode. Thiếu hai dòng này thì Localizable.xcstrings sinh ra
+        # rỗng, không lỗi, không cảnh báo. Đã đo bằng -showBuildSettings.
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
 
   AgeOSTests:
     type: bundle.unit-test
