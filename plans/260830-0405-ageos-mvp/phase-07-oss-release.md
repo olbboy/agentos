@@ -45,11 +45,11 @@ dependencies: [6]
 - [x] CI workflow (core required + app job continue-on-error, cache SPM, macos-26 với fallback note) — XANH TRÊN GITHUB cần push (chưa publish)
 - [x] Release lane script: CLI tarball + app zip + ký/notarize CHỈ KHI có AGEOS_SIGN_IDENTITY/AGEOS_NOTARY_PROFILE, fallback unsigned + quarantine note + SHA-256 checksums
 - [x] Cask template packaging/homebrew/ageos.rb (điền owner/sha khi có tap) — cài máy sạch verify SAU khi publish
-- [ ] v0.1.0 + release notes — CHẶN BỞI QUYẾT ĐỊNH USER: chốt GitHub owner/bundle id, tạo repo public (secret-scan trước), tap repo, (tùy chọn) Developer ID
+- [x] v0.1.0 PUBLISHED 30/8: bundle id io.github.olbboy.ageos, tag → release workflow xanh, notes curated; Developer ID vẫn là tùy chọn tương lai (Sparkle hoãn theo)
 
 ## Success Criteria
-- [ ] Máy sạch cask install — SAU PUBLISH (artifacts + lane sẵn sàng)
-- [ ] CI xanh trên push + PR — SAU PUBLISH (workflow sẵn sàng; core suite xanh local 62/62)
+- [x] Cask install verified qua đường public thật (brew trust olbboy/tap → install → app chạy từ /Applications; máy sạch 100% vẫn nên thử khi có dịp); phát hiện + sửa docs: Homebrew gỡ cờ no-quarantine + cần Tap-Trust, macOS 26 gỡ cờ -r của xattr
+- [x] CI xanh THẬT trên GitHub: cả 2 job success từ commit init; release workflow xanh từ tag v0.1.0
 - [x] Repo chưa có commit nào (git init sạch) — secret-scan chạy trước commit đầu khi user quyết định publish; .gitignore chặn .build/xcodeproj/DS_Store
 - [x] Acceptance plan.md: 7/8 tick với bằng chứng máy thật, mục #8 (repo public) chờ user — xem plan.md
 

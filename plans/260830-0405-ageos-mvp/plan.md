@@ -1,7 +1,7 @@
 ---
 title: "AgeOS MVP — native macOS Skills + MCP manager (OSS)"
 description: "App macOS native (SwiftUI, macOS 26+) quản lý & phân phối Agent Skills + MCP servers: library trung tâm, adapter per-agent (symlink/copy), intelligence (dedupe/quality/budget), CLI + MCP server."
-status: in-progress
+status: done
 priority: P1
 effort: "26d"
 tags: [ageos, macos, swift, mcp, skills]
@@ -54,7 +54,7 @@ Phụ thuộc: 3←(1,2) · 4←(1,2) · 5←(3,4) · 6←5 · 7←6. Phase 2 c�
 - [x] `ageos budget --target claude-code` = ≈9,992 tokens/136 skills + cảnh báo ngưỡng + cảnh báo MCP chưa đo; đối chiếu /context thủ công ghi trong CLI output (±20%)
 - [x] Flow `search_skills → install_skill → enable_skill` qua ageos-mcp pass loopback E2E; VÀ đã gọi thành công `list_targets` + `budget_report` TỪ SESSION CLAUDE CODE THẬT (30/8 07:52 — server dogfood tự load vào session, trả 6 adapter + budget 10,450 tokens) — acceptance khép trọn
 - [x] Disable/remove sạch idempotent (lockfile về 0, agent dir nguyên trạng); mọi file user được bảo vệ bằng conflict-check + marker (test + máy thật)
-- [ ] Repo public: MIT/README/CONTRIBUTING/SECURITY/CI/cask ĐÃ SẴN local — publish (push, tap, tag v0.1.0) chờ quyết định user (xem docs/deployment-guide.md checklist)
+- [x] Repo public (user push 30/8) + v0.1.0 PUBLISHED 30/8 08:19: tag → release workflow xanh (CLI tarball + app zip + checksums), cask lên olbboy/homebrew-tap, `brew install --cask ageos` CÀI THẬT thành công (qua Tap-Trust mới của Homebrew; app chạy từ /Applications) — release notes đối chiếu criteria
 
 ## Validation Log
 
