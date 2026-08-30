@@ -1,27 +1,27 @@
 import XCTest
 
-/// UI smoke: app khởi động được, sidebar đủ mục, không crash.
+/// UI smoke: the app launches, the sidebar is complete, nothing crashes.
 ///
-/// Giữ XCTest chứ không đổi sang swift-testing: `XCUIApplication` và
-/// `performAccessibilityAudit` là API họ XCTest, swift-testing không có bản
-/// tương đương. Unit test mới thì ngược lại — dùng swift-testing.
+/// These stay on XCTest rather than swift-testing: `XCUIApplication` and
+/// `performAccessibilityAudit` are XCTest APIs and swift-testing has no equivalent.
+/// New unit tests go the other way — they use swift-testing.
 ///
-/// Đừng để file này phình thành test từng màn: UI test chạy chậm và dễ flaky.
-/// Logic thuần đã có test riêng ở `DesignSystemTests` và `DiagnosticSeverityTests`.
+/// Do not let this file grow into a test per screen: UI tests are slow and flaky.
+/// The pure logic already has its own tests in `DesignSystemTests` and `DiagnosticSeverityTests`.
 final class AgeOSUISmokeTests: XCTestCase {
 
-    /// Home tạm cho mỗi lần chạy — test không bao giờ đụng `~/.ageos` thật.
+    /// A temp home per run — the tests never touch the real `~/.ageos`.
     private func makeTempHome() -> String {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("ageos-ui-smoke-\(UUID().uuidString.prefix(6))").path
     }
 
-    /// `activate()` sau `launch()` là BẮT BUỘC, không phải thừa.
+    /// `activate()` after `launch()` is REQUIRED, not redundant.
     ///
-    /// Đo được: chỉ `launch()` thì `app.windows.count == 0` và mọi assertion đều
-    /// fail như thể app hỏng. Thêm `activate()` thì thành 1 window với đầy đủ nội
-    /// dung. App tự nó không sao — mở bằng `open -n` luôn ra cửa sổ "Overview" —
-    /// khác biệt nằm ở cách XCUITest khởi chạy tiến trình.
+    /// Measured: with only `launch()`, `app.windows.count == 0` and every assertion
+    /// fails as though the app were broken. Adding `activate()` gives one window with
+    /// full content. The app itself is fine — opened with `open -n` it always shows its
+    /// "Overview" window — the difference is in how XCUITest starts the process.
     private func launch(home: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["AGEOS_HOME"] = home
@@ -30,9 +30,9 @@ final class AgeOSUISmokeTests: XCTestCase {
         return app
     }
 
-    /// Sidebar được địa chỉ hoá bằng identifier chứ không bằng nhãn hiển thị:
-    /// hàng trong `List` không phơi nhãn ra ngoài cell, và nhãn là thứ dịch được
-    /// nên bám vào nó là bám vào thứ sẽ đổi.
+    /// The sidebar is addressed by identifier rather than by display label: a row inside
+    /// a `List` does not expose its label outside the cell, and a label is translatable,
+    /// so matching on it means matching on something that will change.
     private func sidebarItem(_ app: XCUIApplication, _ name: String) -> XCUIElement {
         app.descendants(matching: .any)["sidebar.\(name)"]
     }
@@ -40,17 +40,17 @@ final class AgeOSUISmokeTests: XCTestCase {
     private let screens = ["Overview", "Library", "Target Matrix",
                            "MCP Servers", "Context Budget", "Diagnostics"]
 
-    /// Bỏ qua các phần tử KHUNG do SwiftUI/AppKit tự sinh, giữ lại mọi thứ của app.
+    /// Ignore the FRAME elements SwiftUI and AppKit generate; keep everything the app owns.
     ///
-    /// Đo được: sau khi sửa hết lỗi contrast, còn 45 issue — 30 `Group`, 6
-    /// `TouchBar`, 2 `Outline` và mấy `Group` chrome cửa sổ. KHÔNG cái nào có
-    /// identifier, tức không cái nào do app tạo. Đó là container SwiftUI dựng ngầm
-    /// cho `NavigationSplitView`, `Section`, `List` — không có API nào gắn nhãn cho
-    /// chúng, và gắn nhãn cho một Group bố cục cũng không giúp gì cho VoiceOver.
+    /// Measured: after every contrast failure was fixed, 45 issues remained — 30 `Group`,
+    /// 6 `TouchBar`, 2 `Outline` and a few window-chrome `Group`s. NONE carried an
+    /// identifier, so none is created by the app. They are the containers SwiftUI builds
+    /// implicitly for `NavigationSplitView`, `Section` and `List` — there is no API to
+    /// label them, and labelling a layout group would not help VoiceOver anyway.
     ///
-    /// Bộ lọc cố ý HẸP: chỉ bỏ qua khi phần tử vừa là kiểu container, vừa KHÔNG có
-    /// identifier. Thêm một Button thiếu nhãn hay một StaticText tương phản kém thì
-    /// test vẫn đỏ — đó là điều nó tồn tại để bắt.
+    /// The filter is deliberately NARROW: it ignores an element only when it is both a
+    /// container type and unidentified. Add an unlabelled Button or a low-contrast
+    /// StaticText and this test still goes red — that is what it exists to catch.
     private static func isFrameworkContainer(_ element: XCUIElement?) -> Bool {
         guard let element else { return false }
         guard element.identifier.isEmpty else { return false }
@@ -62,13 +62,13 @@ final class AgeOSUISmokeTests: XCTestCase {
         }
     }
 
-    /// SwiftUI `Menu` trong toolbar dựng ra một AXMenuButton không phơi AXPress,
-    /// nên audit `.action` luôn báo thiếu. Đã thử `.accessibilityAddTraits(.isButton)`
-    /// — không đổi gì; không có API nào thêm action cho `Menu`.
+    /// A SwiftUI `Menu` in a toolbar produces an AXMenuButton that exposes no AXPress,
+    /// so the `.action` audit always reports it missing. `.accessibilityAddTraits(.isButton)`
+    /// was tried and changed nothing; there is no API to add an action to a `Menu`.
     ///
-    /// Bỏ qua ở đây là chấp nhận có ý thức, KHÔNG phải giấu lỗi: khả năng dùng thật
-    /// của nút này được `testFilterMenuOpens` chứng minh bằng cách bấm và kiểm mục
-    /// bên trong. Nếu nút hỏng thật thì test đó đỏ.
+    /// Ignoring it here is a deliberate acceptance, NOT hiding a defect: that the button
+    /// actually works is proven by `testFilterMenuOpens`, which clicks it and checks the
+    /// items inside. If the control ever breaks, that test goes red.
     private static func isSwiftUIMenuActionGap(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
         issue.auditType == .action && issue.element?.elementType == .menuButton
     }
@@ -83,25 +83,25 @@ final class AgeOSUISmokeTests: XCTestCase {
 
         XCTAssertTrue(sidebarItem(app, "Overview").waitForExistence(timeout: 15))
         for screen in screens {
-            XCTAssertTrue(sidebarItem(app, screen).exists, "Thiếu mục sidebar '\(screen)'")
+            XCTAssertTrue(sidebarItem(app, screen).exists, "Missing sidebar item '\(screen)'")
         }
 
-        // Hai mục đã hoà tan vào Overview và Diagnostics — còn sót nghĩa là
-        // IA cũ chưa được gỡ hết.
+        // These two dissolved into Overview and Diagnostics — anything left means the
+        // old IA was not fully removed.
         XCTAssertFalse(sidebarItem(app, "Adopt").exists)
         XCTAssertFalse(sidebarItem(app, "Scan").exists)
 
-        // Nhóm sidebar vẫn là nhãn hiển thị, và đó là thứ người dùng đọc.
+        // The sidebar group headers are still display labels, and that is what a user reads.
         XCTAssertTrue(app.staticTexts["Distribute"].exists)
         XCTAssertTrue(app.staticTexts["Health"].exists)
     }
 
-    /// Điều kiện nghiệm thu số 1 của bản redesign, nên khoá bằng test.
+    /// Acceptance criterion number one for this redesign, so it is locked with a test.
     ///
-    /// Lỗi đang đi sửa: mở app lần đầu rơi vào Library RỖNG — màn hình trắng, không
-    /// biết làm gì tiếp. Overview phải hiện ngay inventory quét từ máy thật, kể cả
-    /// khi `AGEOS_HOME` hoàn toàn trắng, vì `EffectiveLoadScanner` đọc thư mục agent
-    /// chứ không đọc `~/.ageos`.
+    /// The bug being fixed: opening the app landed on an EMPTY Library — a blank screen
+    /// with nothing to do next. Overview has to show the inventory scanned from the real
+    /// machine immediately, even with a completely blank `AGEOS_HOME`, because
+    /// `EffectiveLoadScanner` reads the agent folders, not `~/.ageos`.
     func testColdStartLandsOnOverview() throws {
         let tmp = makeTempHome()
         let app = launch(home: tmp)
@@ -112,31 +112,31 @@ final class AgeOSUISmokeTests: XCTestCase {
 
         XCTAssertTrue(sidebarItem(app, "Overview").waitForExistence(timeout: 15))
 
-        // Cold-start hero chỉ hiện khi library rỗng — đúng tình huống này.
+        // The cold-start hero only appears when the library is empty — exactly this case.
         XCTAssertTrue(app.staticTexts["Start here"].waitForExistence(timeout: 15),
-                      "Library rỗng phải hiện cold-start hero, không phải màn trắng")
+                      "An empty library must show the cold-start hero, not a blank screen")
 
-        // Chờ nút ENABLE, không chỉ chờ nó tồn tại. Nút disabled vẫn "tồn tại" ngay
-        // lúc render đầu tiên, trước khi quét xong trên Task.detached.
+        // Wait for the button to be ENABLED, not merely to exist. A disabled button exists
+        // from the first render, before the scan finishes on Task.detached.
         let importButton = app.buttons["Import into library"]
         XCTAssertTrue(importButton.waitForExistence(timeout: 20))
         let enabled = expectation(for: NSPredicate(format: "isEnabled == true"),
                                   evaluatedWith: importButton)
         XCTAssertEqual(XCTWaiter().wait(for: [enabled], timeout: 30), .completed,
-                       "Inventory phải có dữ liệu máy thật ngay cả khi AGEOS_HOME trắng")
+                       "The inventory must hold real machine data even with a blank AGEOS_HOME")
 
         XCTAssertTrue(app.buttons["Add a source"].exists)
 
-        // Bốn StatTile là Button vì mỗi cái deep-link đi đâu đó — tile chỉ hiện số
-        // mà không bấm được thì đã bị loại khỏi màn này có chủ ý.
+        // The four StatTiles are Buttons because each deep-links somewhere — a tile that
+        // only shows a number and cannot be clicked was deliberately dropped.
         for tile in ["distinct skills", "agents detected",
                      "managed by AgeOS", "loaded in 2+ agents"] {
-            XCTAssertTrue(app.buttons[tile].exists, "Thiếu StatTile '\(tile)'")
+            XCTAssertTrue(app.buttons[tile].exists, "Missing StatTile '\(tile)'")
         }
     }
 
-    /// Bù cho chỗ audit `.action` không kiểm được: chứng minh Menu filter thật sự
-    /// mở ra và có mục bên trong. Đây là lý do việc bỏ qua issue kia là an toàn.
+    /// Covers what the `.action` audit cannot: proves the filter Menu actually opens and
+    /// has items. This is why ignoring that audit issue is safe.
     func testFilterMenuOpens() throws {
         let tmp = makeTempHome()
         let app = launch(home: tmp)
@@ -148,23 +148,23 @@ final class AgeOSUISmokeTests: XCTestCase {
         sidebarItem(app, "Library").click()
         let menu = app.descendants(matching: .any)["library.filterMenu"]
         XCTAssertTrue(menu.waitForExistence(timeout: 15))
-        XCTAssertTrue(menu.isHittable, "Menu filter phải bấm được")
+        XCTAssertTrue(menu.isHittable, "The filter menu must be clickable")
         menu.click()
 
         XCTAssertTrue(app.menuItems["Deprecated only"].waitForExistence(timeout: 10),
-                      "Menu mở ra phải có mục lọc bên trong")
+                      "An open menu must contain its filter items")
         XCTAssertTrue(app.menuItems["Enabled somewhere"].exists)
     }
 
-    /// Audit accessibility tự động trên cả 6 màn.
+    /// The automatic accessibility audit across all six screens.
     ///
-    /// `performAccessibilityAudit()` mặc định chạy MỌI loại audit khả dụng của nền
-    /// tảng — trên macOS gồm `.contrast`, `.sufficientElementDescription`,
-    /// `.elementDetection`, `.hitRegion`, `.action`, `.parentChild`. Mỗi vấn đề tìm
-    /// được trở thành một `XCTIssue`, nên test tự fail, không cần assert tay.
+    /// `performAccessibilityAudit()` runs EVERY audit type the platform supports — on
+    /// macOS that is `.contrast`, `.sufficientElementDescription`, `.elementDetection`,
+    /// `.hitRegion`, `.action` and `.parentChild`. Each problem becomes an `XCTIssue`, so
+    /// the test fails on its own without hand-written assertions.
     ///
-    /// Nó KHÔNG thay được tai người: audit bắt được thiếu nhãn và thiếu contrast,
-    /// nhưng không bắt được nhãn *có mà vô nghĩa* hay thứ tự đọc phi logic.
+    /// It does NOT replace a human ear: the audit catches missing labels and insufficient
+    /// contrast, but not a label that exists yet says nothing, or an illogical reading order.
     func testAccessibilityAuditAcrossAllScreens() throws {
         let tmp = makeTempHome()
         let app = launch(home: tmp)
@@ -176,30 +176,14 @@ final class AgeOSUISmokeTests: XCTestCase {
         app.activate()
         XCTAssertTrue(sidebarItem(app, "Overview").waitForExistence(timeout: 15))
 
-        // Trao keyboard focus cho sidebar TRƯỚC vòng lặp, bằng cách chọn một hàng
-        // khác hàng mặc định.
-        //
-        // Vì sao cần: lúc mới launch, hàng "Overview" đã được chọn nhưng list chưa có
-        // focus, nên macOS vẽ selection ở kiểu INACTIVE (nền xám nhạt) và audit
-        // `.contrast` — vốn đo pixel thật — báo fail. Click vào chính hàng đang chọn
-        // không trao focus, nên vòng lặp bắt đầu bằng Overview sẽ luôn fail ở lần
-        // đầu và pass ở mọi lần sau. Đó là lý do test này pass khi chạy một mình và
-        // fail trong suite.
-        //
-        // Hệ quả phải nói rõ: test audit trạng thái ACTIVE. Tương phản của selection
-        // lúc INACTIVE do macOS vẽ, app không chọn màu đó — và ép màu chữ ở đây đã
-        // được thử và làm hỏng trạng thái active (xem ContentView).
-        sidebarItem(app, "Diagnostics").click()
-        _ = app.staticTexts["Diagnostics"].waitForExistence(timeout: 10)
-
         for screen in screens {
             let item = sidebarItem(app, screen)
-            XCTAssertTrue(item.waitForExistence(timeout: 10), "Không thấy mục sidebar '\(screen)'")
+            XCTAssertTrue(item.waitForExistence(timeout: 10), "Sidebar item '\(screen)' not found")
             item.click()
 
-            // Chờ detail pane thật sự đổi trước khi audit. Không có bước này, audit
-            // có thể chạy trên cây của màn TRƯỚC — nếu màn trước sạch thì test báo
-            // pass cho màn hiện tại dù chưa từng kiểm nó.
+            // Wait for the detail pane to actually change before auditing. Without
+            // this the audit can run against the PREVIOUS screen's tree — and if that
+            // one was clean, the test reports a pass for a screen it never examined.
             let title = app.staticTexts[screen]
             _ = title.waitForExistence(timeout: 10)
 
@@ -210,7 +194,7 @@ final class AgeOSUISmokeTests: XCTestCase {
                             || Self.isSwiftUIMenuActionGap(issue)
                     }
                 } catch {
-                    XCTFail("Audit thất bại trên màn \(screen): \(error)")
+                    XCTFail("Audit failed on the \(screen) screen: \(error)")
                 }
             }
         }

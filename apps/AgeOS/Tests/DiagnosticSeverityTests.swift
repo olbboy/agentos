@@ -3,13 +3,14 @@ import Testing
 import AgeOSCore
 @testable import AgeOS
 
-/// Dựng fixture bằng cách decode JSON thay vì gọi init.
+/// Fixtures are decoded from JSON rather than built with an initializer.
 ///
-/// Lý do: `public struct` trong Swift KHÔNG tự có memberwise init public — chỉ có
-/// internal. Từ module app ta chỉ thấy `init(from:)` do Codable sinh ra. Thêm init
-/// public vào core sẽ mở rộng API surface, mà ràng buộc của plan chỉ cho đúng một
-/// ngoại lệ (`BudgetMeter.skillTokens`). Decode JSON tôn trọng ranh giới đó, và
-/// tiện thể khoá luôn hình dạng `--json` — test sẽ đỏ nếu key đổi tên.
+/// The reason: a `public struct` in Swift gets no public memberwise init — only an
+/// internal one. From the app module the only visible initializer is the `init(from:)`
+/// Codable synthesizes. Adding a public init to core would widen its API surface, and
+/// the plan allows exactly one such exception (`BudgetMeter.skillTokens`). Decoding
+/// respects that boundary and, as a bonus, pins the `--json` shape — these tests fail
+/// if a key is renamed.
 private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
     try JSONDecoder().decode(T.self, from: Data(json.utf8))
 }
@@ -25,30 +26,30 @@ private func doctorFinding(kind: String, fixable: Bool = true,
 @Suite("Diagnostic severity mapping")
 struct DiagnosticSeverityMappingTests {
 
-    @Test("Bốn Kind nghĩa là phân phối đang hỏng → Error")
+    @Test("Four kinds mean distribution is genuinely broken → Error")
     func brokenDistributionIsError() {
         for kind: Doctor.Finding.Kind in [.brokenLink, .missingTarget, .storeMissing, .adapterUnknown] {
-            #expect(DiagnosticSeverity.of(kind) == .error, "\(kind.rawValue) phải là error")
+            #expect(DiagnosticSeverity.of(kind) == .error, "\(kind.rawValue) should be an error")
         }
     }
 
-    @Test("Bốn Kind nghĩa là trạng thái lệch → Warning")
+    @Test("Four kinds mean state has drifted → Warning")
     func driftIsWarning() {
         for kind: Doctor.Finding.Kind in [.copyDrift, .orphanFile, .agentPathMissing, .userShadow] {
-            #expect(DiagnosticSeverity.of(kind) == .warning, "\(kind.rawValue) phải là warning")
+            #expect(DiagnosticSeverity.of(kind) == .warning, "\(kind.rawValue) should be a warning")
         }
     }
 
-    /// `switch` trong `DiagnosticSeverity.of` không có `default`, nên nếu core thêm
-    /// `Kind` mới thì compiler chặn trước. Test này là hàng rào thứ hai: nó bắt
-    /// trường hợp ai đó "sửa lỗi build" bằng cách thêm `default` cho nhanh.
-    @Test("Đúng 8 Kind, mỗi cái map ra một severity xác định")
+    /// The `switch` in `DiagnosticSeverity.of` has no `default`, so a new kind in core
+    /// stops the compiler first. This test is the second fence: it catches someone
+    /// "fixing the build" by reaching for a `default`.
+    @Test("Exactly 8 kinds, each mapping to a definite severity")
     func everyKindIsMapped() {
         let all: [Doctor.Finding.Kind] = [
             .brokenLink, .missingTarget, .copyDrift, .orphanFile,
             .agentPathMissing, .userShadow, .storeMissing, .adapterUnknown,
         ]
-        #expect(all.count == 8, "Core đã đổi số lượng Kind — cập nhật bảng severity")
+        #expect(all.count == 8, "Core changed the number of kinds — update the severity table")
         for kind in all {
             let severity = DiagnosticSeverity.of(kind)
             #expect(severity == .error || severity == .warning)
@@ -72,13 +73,13 @@ struct DiagnosticsBuilderTests {
         """
     }
 
-    @Test("Không có nguồn nào thì không sinh finding nào")
+    @Test("No sources produce no findings")
     func emptyInputsProduceNothing() {
         let items = DiagnosticsBuilder.build(doctorFindings: [], scanReport: nil, inventory: nil)
         #expect(items.isEmpty)
     }
 
-    @Test("Exact dupe là Error, near dupe và deprecated là Warning, lint là Info")
+    @Test("Exact duplicates are Errors, near duplicates and deprecation are Warnings, lint is Info")
     func scanSourcesLandInTheRightGroups() throws {
         let report = try decode(ScanEngine.ScanReport.self, fullScanReport)
         let items = DiagnosticsBuilder.build(doctorFindings: [], scanReport: report, inventory: nil)
@@ -88,7 +89,7 @@ struct DiagnosticsBuilderTests {
         #expect(items.filter { $0.severity == .info }.count == 1)
     }
 
-    @Test("Finding đã sửa mang trạng thái Fixed, không phải Fixable")
+    @Test("An already-repaired finding reads Fixed, not Fixable")
     func fixedFindingsSaySo() throws {
         let items = DiagnosticsBuilder.build(
             doctorFindings: [try doctorFinding(kind: "broken_link", fixable: true, fixed: true)],
@@ -97,7 +98,7 @@ struct DiagnosticsBuilderTests {
         #expect(items[0].status == "Fixed")
     }
 
-    @Test("Finding không sửa tự động được thì nói thẳng, không để trống")
+    @Test("A finding with no automatic fix says so rather than leaving a blank")
     func unfixableSaysSo() throws {
         let items = DiagnosticsBuilder.build(
             doctorFindings: [try doctorFinding(kind: "user_shadow", fixable: false)],
@@ -105,7 +106,7 @@ struct DiagnosticsBuilderTests {
         #expect(items[0].status == "No automatic fix")
     }
 
-    @Test("Mỗi id là duy nhất — id trùng làm ForEach dựng sai danh sách")
+    @Test("Every id is unique — duplicates make ForEach build the wrong list")
     func idsAreUnique() throws {
         let report = try decode(ScanEngine.ScanReport.self, """
         {"scannedSkills":2,
@@ -124,7 +125,7 @@ struct DiagnosticsBuilderTests {
         #expect(Set(items.map(\.id)).count == items.count)
     }
 
-    @Test("Duplicate load path từ inventory rơi vào Warning")
+    @Test("Duplicate load paths from the inventory land in Warning")
     func duplicatePathsAreWarnings() throws {
         let inventory = try decode(EffectiveLoadScanner.Inventory.self, """
         {"agents":[{"adapterId":"claude-code","entries":[],
@@ -138,7 +139,7 @@ struct DiagnosticsBuilderTests {
         #expect(items[0].message.contains("2 paths"))
     }
 
-    @Test("Ba nguồn cùng lúc: tổng đếm khớp, không nguồn nào bị nuốt")
+    @Test("All three sources at once: the totals add up and nothing is swallowed")
     func allSourcesCombine() throws {
         let report = try decode(ScanEngine.ScanReport.self, fullScanReport)
         let inventory = try decode(EffectiveLoadScanner.Inventory.self, """

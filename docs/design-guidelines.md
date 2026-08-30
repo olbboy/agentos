@@ -3,10 +3,7 @@
 The design language for the AgeOS SwiftUI app. Every spacing, type, and color
 decision in `apps/AgeOS/Sources/` resolves to a token defined here.
 
-This document is written in English to match `README.md`, `CONTRIBUTING.md`,
-`SECURITY.md`, and the app itself. Four older documents in `docs/` are in
-Vietnamese; translating them is tracked separately and deliberately out of scope
-for the UI redesign.
+Written in English, like everything else in this repository.
 
 ## The governing principle
 

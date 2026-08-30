@@ -2,7 +2,8 @@ import XCTest
 import AgeOSCore
 @testable import AgeOS
 
-/// ViewModel tests — chạy trên AGEOS_HOME tạm (setenv trước khi model chạm core).
+/// View-model tests — run against a temporary AGEOS_HOME (setenv before the model
+/// touches core).
 @MainActor
 final class AppModelTests: XCTestCase {
     var homeRoot: URL!
@@ -14,7 +15,7 @@ final class AppModelTests: XCTestCase {
         let home = AgeOSHome()
         try home.ensureLayout()
 
-        // Fake adapter trong home tạm — model không đụng máy thật.
+        // A fake adapter inside the temp home — the model never touches the real machine.
         let agentDir = homeRoot.appendingPathComponent("fake-agent/skills", isDirectory: true)
         try FileManager.default.createDirectory(at: agentDir, withIntermediateDirectories: true)
         try """
@@ -42,7 +43,7 @@ final class AppModelTests: XCTestCase {
     }
 
     func testAddSourceToggleFlow() async throws {
-        // Nguồn local 1 skill.
+        // A local source with one skill.
         let src = homeRoot.appendingPathComponent("src/toggle-me", isDirectory: true)
         try FileManager.default.createDirectory(at: src, withIntermediateDirectories: true)
         try """
@@ -59,8 +60,8 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.skills.count, 1)
         let skillId = model.skills[0].id
 
-        // Matrix adapter chỉ chứa fake-agent (bundled adapter trỏ máy thật vẫn detected
-        // nhưng toggle test chỉ đụng fake-agent).
+        // The matrix adapters hold only the fake agent (bundled adapters pointing at the
+        // real machine are still detected, but the toggle test only touches the fake one).
         XCTAssertFalse(model.isEnabled(skillId: skillId, adapterId: "fake-agent"))
         await model.toggle(skillId: skillId, adapterId: "fake-agent", enabled: true)
         XCTAssertNil(model.lastError)
