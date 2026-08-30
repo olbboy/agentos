@@ -1,27 +1,27 @@
 import SwiftUI
 
-/// Cầu nối từ tên ngữ nghĩa sang Asset Catalog.
+/// The bridge from semantic names to the Asset Catalog.
 ///
-/// Tên mô tả **vai trò** (`statusDanger`), không mô tả màu (`red`). Đổi hue về sau
-/// chỉ phải sửa Asset Catalog, không phải rà lại call site.
+/// Names describe a **role** (`statusDanger`), not a color (`red`). Changing the hue
+/// later means editing the Asset Catalog, not auditing call sites.
 ///
-/// Mỗi color set khai báo 4 biến thể (light / dark / light+HighContrast /
-/// dark+HighContrast). macOS tự chọn biến thể đúng theo môi trường, nên view
-/// không cần đọc `@Environment(\.colorScheme)` hay dò Increase Contrast.
+/// Each color set declares four variants (light / dark / light+HighContrast /
+/// dark+HighContrast). macOS picks the right one for the environment, so no view
+/// needs to read `@Environment(\.colorScheme)` or probe for Increase Contrast.
 ///
-/// Giá trị hex và contrast ratio đo được: `docs/design-guidelines.md`.
+/// Hex values and measured contrast ratios: `docs/design-guidelines.md`.
 extension Color {
-    /// Nền cửa sổ.
+    /// The window background.
     static let ageSurface       = Color("surface")
-    /// Nền của card/section nổi trên `ageSurface`.
+    /// The background of a card or section raised above `ageSurface`.
     static let ageSurfaceRaised = Color("surfaceRaised")
-    /// Đường kẻ phân cách. Thuần trang trí — không bao giờ mang trạng thái.
+    /// Separator lines. Purely decorative — never carries state.
     static let ageBorderSubtle  = Color("borderSubtle")
     static let ageTextPrimary   = Color("textPrimary")
     static let ageTextSecondary = Color("textSecondary")
 
-    /// Chỉ dùng ở diện tích nhỏ: trạng thái active, đường kẻ trái, eyebrow.
-    /// Không làm nền lớn — xem quy tắc trong design-guidelines.
+    /// Only for small areas: active state, a left rule, an eyebrow.
+    /// Never a large fill — see the rules in design-guidelines.
     static let ageAccentBrand   = Color("accentBrand")
 
     static let ageStatusSuccess = Color("statusSuccess")

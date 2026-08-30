@@ -1,9 +1,9 @@
 import Foundation
 import CoreServices
 
-/// Theo dõi thư mục skill của các agent bằng FSEvents.
-/// Debounce qua latency 1.0s + coalesce của chính FSEvents (risk plan: event dồn dập
-/// khi sync lớn → không giật UI).
+/// Watches the agents' skill folders with FSEvents.
+/// Debounced by a 1.0s latency plus FSEvents' own coalescing (planned risk: a burst
+/// of events during a large sync → the UI must not stutter).
 final class FsEventsWatcher: @unchecked Sendable {
     private var stream: FSEventStreamRef?
     var onChange: (@Sendable () -> Void)?

@@ -1,40 +1,40 @@
 import SwiftUI
 
-/// Thanh ngang so sánh một giá trị trên **thang dùng chung**.
+/// A horizontal bar comparing a value on a **shared scale**.
 ///
-/// `scaleMax` do view cha tính MỘT LẦN cho cả nhóm, không phải mỗi meter tự chuẩn
-/// hoá theo ngưỡng riêng. Nếu mỗi thanh có trục riêng thì hai thanh dài bằng nhau
-/// lại mang giá trị khác nhau — đúng cái lỗi mà bản redesign này đi sửa.
+/// The parent computes `scaleMax` ONCE for the whole group; a meter never
+/// normalizes against its own threshold. If each bar had its own axis, two bars of
+/// equal length would mean different things — the very bug this redesign fixes.
 struct RatioMeter: View {
     let value: Int
-    /// `nil` = adapter không khai báo ngưỡng cảnh báo.
+    /// `nil` = the adapter declares no warning threshold.
     let threshold: Int?
-    /// Trục chung của cả nhóm. KHÔNG phải ngưỡng riêng của dòng này.
+    /// The group's shared axis. NOT this row's own threshold.
     let scaleMax: Int
-    /// Đơn vị đọc thành lời cho VoiceOver ("tokens").
+    /// The unit spoken aloud for VoiceOver ("tokens").
     var unit: String = "tokens"
-    /// Thanh này đo cái gì. Bắt buộc về mặt accessibility: component tự cô lập bằng
-    /// `.accessibilityElement(children: .ignore)`, nên nếu không có nhãn thì VoiceOver
-    /// đọc "4200 of 10000 tokens" mà không biết đó là của agent nào.
+    /// What this bar measures. Required for accessibility: the component isolates
+    /// itself with `.accessibilityElement(children: .ignore)`, so without a label
+    /// VoiceOver reads "4200 of 10000 tokens" without saying which agent.
     var label: String? = nil
 
-    /// Toàn bộ phần tính toán, tách khỏi view để test được mà không cần render.
+    /// All the arithmetic, kept out of the view so it is testable without rendering.
     struct Geometry: Equatable {
-        /// Tỉ lệ lấp đầy, luôn nằm trong 0...1.
+        /// The fill ratio, always within 0...1.
         let fill: Double
-        /// Vị trí vạch ngưỡng trên trục, `nil` khi không có ngưỡng.
+        /// Where the threshold mark sits on the axis; `nil` when there is no threshold.
         let thresholdMark: Double?
-        /// Đã vượt ngưỡng chưa.
+        /// Whether the value is over the threshold.
         let isOver: Bool
 
         init(value: Int, threshold: Int?, scaleMax: Int) {
-            // scaleMax <= 0 xảy ra khi mọi agent đều 0 token. Chia cho 0 sẽ ra
-            // inf/NaN và SwiftUI vẽ ra khung hình vô nghĩa, nên chặn ở đây.
+            // scaleMax <= 0 happens when every agent is at 0 tokens. Dividing by zero
+            // gives inf/NaN and SwiftUI draws nonsense, so it is stopped here.
             let safeMax = max(scaleMax, 1)
-            // Clamp threshold MỘT LẦN rồi dùng cho cả vạch lẫn phán quyết vượt
-            // ngưỡng. Trước đây vạch dùng giá trị đã clamp còn `isOver` dùng giá
-            // trị gốc, nên threshold âm cho ra thanh rỗng 0% mà vẫn gắn chip đỏ
-            // "over threshold" — hai thứ nói ngược nhau trên cùng một dòng.
+            // Clamp the threshold ONCE and use it for both the mark and the verdict.
+            // The mark used to use the clamped value while `isOver` used the raw one, so
+            // a negative threshold drew an empty 0% bar that still carried a red
+            // "over threshold" chip — two contradictory claims on one row.
             let safeThreshold = threshold.map { max($0, 0) }
             fill = Self.clamped(Double(max(value, 0)) / Double(safeMax))
             thresholdMark = safeThreshold.map { Self.clamped(Double($0) / Double(safeMax)) }
@@ -52,8 +52,8 @@ struct RatioMeter: View {
 
     private var tone: PillTone { geometry.isOver ? .danger : .success }
 
-    /// Trạng thái đọc thành lời. Màu và độ dài thanh không tới được người dùng
-    /// VoiceOver, nên mọi thứ thanh này nói bằng hình phải nói lại bằng chữ.
+    /// The state spoken aloud. Color and bar length never reach a VoiceOver user, so
+    /// everything this bar says visually has to be said again in words.
     private var spokenValue: String {
         let pct = Int((geometry.fill * 100).rounded())
         guard let threshold else {
@@ -93,8 +93,8 @@ struct RatioMeter: View {
                         .font(.ageNumericS)
                         .foregroundStyle(Color.ageTextSecondary)
                 } else {
-                    // Nói thẳng là chưa đặt ngưỡng, thay vì để trống — trống đọc
-                    // như "thiếu dữ liệu", còn đây là một kết luận.
+                    // Say plainly that no threshold is set rather than leaving a blank —
+                    // a blank reads as missing data, this is a conclusion.
                     Text("no threshold set")
                         .font(.ageCaption)
                         .foregroundStyle(Color.ageTextSecondary)
@@ -114,11 +114,11 @@ struct RatioMeter: View {
 #Preview("States") {
     VStack(alignment: .leading, spacing: Space.xl) {
         RatioMeter(value: 4200, threshold: 10000, scaleMax: 20000)
-        RatioMeter(value: 16800, threshold: 10000, scaleMax: 20000)   // vượt ngưỡng
-        RatioMeter(value: 0, threshold: 10000, scaleMax: 20000)       // biên: rỗng
-        RatioMeter(value: 7300, threshold: nil, scaleMax: 20000)      // không có ngưỡng
-        RatioMeter(value: 99999, threshold: 10000, scaleMax: 20000)   // biên: tràn -> clamp
-        RatioMeter(value: 0, threshold: nil, scaleMax: 0)             // biên: thang rỗng
+        RatioMeter(value: 16800, threshold: 10000, scaleMax: 20000)   // over threshold
+        RatioMeter(value: 0, threshold: 10000, scaleMax: 20000)       // edge: empty
+        RatioMeter(value: 7300, threshold: nil, scaleMax: 20000)      // no threshold
+        RatioMeter(value: 99999, threshold: 10000, scaleMax: 20000)   // edge: overflow -> clamp
+        RatioMeter(value: 0, threshold: nil, scaleMax: 0)             // edge: empty scale
     }
     .padding(Space.lg)
     .frame(width: 420)

@@ -1,11 +1,12 @@
 import SwiftUI
 import AgeOSCore
 
-/// Chi tiết budget từng agent. Phần SO SÁNH cross-agent thuộc về Overview —
-/// màn này trả lời "agent này tốn token vào những gì".
+/// Per-agent budget detail. The cross-agent COMPARISON belongs to Overview — this
+/// screen answers "what is this agent spending its tokens on".
 ///
-/// Disclaimer ±20% chuyển từ ĐẦU xuống CUỐI màn: ở đầu nó chặn nội dung, ở cuối nó
-/// trả lời đúng lúc người dùng bắt đầu hỏi "số này đáng tin không".
+/// The ±20% disclaimer moved from the TOP to the BOTTOM: at the top it blocks the
+/// content, at the bottom it answers exactly when the user starts asking whether to
+/// trust the number.
 struct BudgetView: View {
     @Environment(AppModel.self) private var model
 
@@ -73,10 +74,10 @@ struct BudgetView: View {
         }
     }
 
-    /// Dạng hoá đơn: mỗi dòng kèm % của tổng.
+    /// An itemized receipt: every line carries its share of the total.
     ///
-    /// Con số tuyệt đối một mình không nói được cái gì đáng cắt — "≈420" chỉ có
-    /// nghĩa khi biết nó là 3% hay 40% của tổng.
+    /// An absolute number alone cannot tell you what is worth cutting — "≈420" only
+    /// means something once you know whether it is 3% or 40% of the total.
     private func topSkills(_ report: BudgetMeter.Report) -> some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             Text("Top consumers")

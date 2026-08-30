@@ -1,9 +1,9 @@
 import CoreGraphics
 
-/// Thang spacing 4pt. Mọi khoảng cách trong app lấy từ đây, không viết số rời.
+/// The 4pt spacing scale. Every gap in the app comes from here, never a loose number.
 ///
-/// Vì sao dùng `enum` không có case thay vì `struct`: enum rỗng không thể khởi tạo
-/// instance, nên nó là namespace thuần — không ai lỡ viết `Space()` được.
+/// Why a caseless `enum` rather than a `struct`: an empty enum cannot be
+/// instantiated, so it is a pure namespace — nobody can accidentally write `Space()`.
 enum Space {
     static let xs: CGFloat = 4
     static let sm: CGFloat = 8
@@ -13,14 +13,14 @@ enum Space {
     static let xxl: CGFloat = 32
 }
 
-/// Bán kính bo góc. Ba mức đủ cho toàn app: control nhỏ, card, container lớn.
+/// Corner radii. Three steps cover the app: small controls, cards, large containers.
 enum Radius {
     static let sm: CGFloat = 6
     static let md: CGFloat = 10
     static let lg: CGFloat = 14
 }
 
-/// Độ dày đường kẻ. Tách riêng khỏi `Space` vì đây là nét vẽ, không phải khoảng cách.
+/// Line weights. Kept apart from `Space` because these are strokes, not gaps.
 enum Stroke {
     static let hairline: CGFloat = 1
     static let emphasis: CGFloat = 2

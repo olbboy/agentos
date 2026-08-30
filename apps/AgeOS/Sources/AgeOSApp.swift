@@ -6,20 +6,17 @@ struct AgeOSApp: App {
     @State private var model = AppModel()
 
     var body: some Scene {
-        // KHÔNG đặt id cho WindowGroup. Đo được trên chính project này: đặt id thì
-        // app khởi động mà không mở cửa sổ nào (cây accessibility chỉ có MenuBar,
-        // 0/2 lần chạy thấy Window; bỏ id ra thì thấy ngay). `defaultLaunchBehavior
-        // (.presented)` biên dịch được nhưng không cứu được.
-        // Hệ quả: menu bar không dùng `openWindow(id:)` mà đi đường reopen của
-        // AppKit — xem MenuBarView.
+        // Do NOT give WindowGroup an id. Measured on this very project: with an id the
+        // app launches without opening any window (the accessibility tree held only the
+        // MenuBar, 0 of 2 runs saw a Window; dropping the id brought it straight back).
+        // `defaultLaunchBehavior(.presented)` compiles but does not rescue it.
+        // Consequence: the menu bar does not use `openWindow(id:)`; it goes through
+        // AppKit's reopen path instead — see MenuBarView.
         WindowGroup {
             ContentView()
                 .environment(model)
                 .task { await model.start() }
         }
-        // Đo được: WindowGroup CÓ id thì app khởi động KHÔNG mở cửa sổ nào.
-        // defaultLaunchBehavior(.presented) ép nó mở, để vẫn giữ được id cho
-        // openWindow(id:) của menu bar.
 
         MenuBarExtra("AgeOS", systemImage: "square.stack.3d.up") {
             MenuBarView()
@@ -33,9 +30,9 @@ struct AgeOSApp: App {
     }
 }
 
-/// Một đích trong sidebar. Tách khỏi việc NHÓM chúng lại: nhóm là chuyện trình bày,
-/// đích là chuyện điều hướng, và Overview cần deep-link tới đích mà không quan tâm
-/// nó nằm nhóm nào.
+/// One destination in the sidebar. Kept separate from how they are GROUPED: grouping
+/// is presentation, a destination is navigation, and Overview deep-links to one
+/// without caring which group it lives in.
 enum Destination: String, CaseIterable, Identifiable, Hashable {
     case overview = "Overview"
     case library = "Library"
@@ -57,8 +54,8 @@ enum Destination: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// Ba nhóm thay cho 6 mục phẳng: cái đang có tổng quan, cái để phân phối,
-    /// cái để kiểm tra sức khoẻ.
+    /// Three groups instead of six flat items: what you have, what distributes it,
+    /// and what checks its health.
     enum Group: String, CaseIterable, Identifiable {
         case none = ""
         case distribute = "Distribute"
@@ -94,9 +91,13 @@ struct ContentView: View {
                     }
                 }
             }
-            // Nền đục + màu chữ từ token: sidebar mặc định của macOS dùng vật liệu
-            // trong suốt, và audit `.contrast` đo được chữ trên nền đó KHÔNG đạt.
-            // Đặt nền và màu tường minh là cách duy nhất kiểm soát được tỉ lệ này.
+            // An opaque background is REQUIRED, and measured: the default macOS
+            // sidebar uses translucent material, and the `.contrast` audit fails on
+            // text drawn over it. Removing these two lines brings the failures back.
+            //
+            // What must NOT be added here is a forced foreground color on the rows.
+            // That was tried and made it worse: it fights the system's own
+            // selected-row coloring, so the selected item then failed contrast.
             .scrollContentBackground(.hidden)
             .background(Color.ageSurface)
             .navigationSplitViewColumnWidth(min: 190, ideal: 210)
@@ -128,9 +129,10 @@ struct ContentView: View {
         Label(destination.rawValue, systemImage: destination.icon)
             .tag(destination)
             .accessibilityLabel(destination.rawValue)
-            // Identifier là địa chỉ ỔN ĐỊNH cho UI test. Nhãn hiển thị là thứ dịch
-            // được và đổi được; hàng sidebar trong List còn không phơi nhãn ra
-            // ngoài cell, nên test không có cách nào bám vào nó cho chắc.
+            // The identifier is a STABLE address for UI tests. A display label is
+            // translatable and changeable, and a sidebar row inside a List does not
+            // even expose its label outside the cell, so a test has nothing solid to
+            // hold on to.
             .accessibilityIdentifier("sidebar." + destination.rawValue)
     }
 }
@@ -165,7 +167,7 @@ struct ErrorBanner: View {
     }
 }
 
-/// FSEvents thấy thay đổi tay trong thư mục agent → gợi ý chạy doctor.
+/// FSEvents saw a hand-made change inside an agent folder → suggest running doctor.
 struct DoctorSuggestion: View {
     @Environment(AppModel.self) private var model
 

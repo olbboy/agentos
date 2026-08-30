@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Sắc thái của một chip trạng thái. Đặt tên theo **vai trò** chứ không theo màu,
-/// để đổi palette không phải sửa call site.
+/// The tone of a status chip. Named after the **role**, not the color, so changing
+/// the palette does not mean editing call sites.
 enum PillTone {
     case neutral, success, warning, danger, info
 
@@ -15,8 +15,8 @@ enum PillTone {
         }
     }
 
-    /// Nền chip. Dùng `.quinary` của chính màu chữ thay vì `.opacity()`:
-    /// opacity làm hỏng contrast đã đo, còn shade hệ thống thì không.
+    /// The chip background. Uses `.quinary` of the foreground rather than `.opacity()`:
+    /// opacity breaks the measured contrast, a system shade does not.
     var background: Color {
         switch self {
         case .neutral: .ageSurface
@@ -28,20 +28,20 @@ enum PillTone {
     }
 }
 
-/// Chip trạng thái nhỏ: icon tuỳ chọn + chữ.
+/// A small status chip: optional icon plus text.
 ///
-/// Chữ luôn có mặt — chip không bao giờ chỉ dùng màu để truyền tin, vì màu không
-/// tới được người dùng VoiceOver và người mù màu.
+/// The text is always present — a chip never uses color alone to carry meaning, since
+/// color reaches neither VoiceOver users nor color-blind users.
 struct StatusPill: View {
     private let label: Text
     private let spoken: Text
     let tone: PillTone
     var icon: String? = nil
 
-    /// Chữ là VĂN XUÔI cần dịch. Nhận `LocalizedStringKey` chứ không nhận `String`:
-    /// một `String` đi qua property luôn resolve vào overload verbatim của `Text`,
-    /// nên chuỗi sẽ KHÔNG BAO GIỜ được trích vào String Catalog — không lỗi, không
-    /// cảnh báo, chỉ âm thầm vắng mặt lúc ai đó ngồi dịch.
+    /// The text is PROSE that needs translating. It takes `LocalizedStringKey` rather
+    /// than `String`: a `String` passed through a property always resolves to `Text`'s
+    /// verbatim overload, so the string would NEVER be extracted into the String
+    /// Catalog — no error, no warning, just silently absent when someone translates.
     init(_ text: LocalizedStringKey, tone: PillTone, icon: String? = nil) {
         self.label = Text(text)
         self.spoken = Text(text)
@@ -49,8 +49,8 @@ struct StatusPill: View {
         self.icon = icon
     }
 
-    /// Chữ là DỮ LIỆU (id, path, thông điệp lỗi từ core, chuỗi đã localize sẵn).
-    /// Không đưa vào catalog — dịch một skill id là vô nghĩa.
+    /// The text is DATA (an id, a path, an error from core, an already-localized string).
+    /// Kept out of the catalog — translating a skill id is meaningless.
     init(verbatim text: String, tone: PillTone, icon: String? = nil) {
         self.label = Text(verbatim: text)
         self.spoken = Text(verbatim: text)
@@ -85,7 +85,7 @@ struct StatusPill: View {
         StatusPill("Broken", tone: .danger, icon: "xmark.octagon")
         StatusPill("No automatic fix", tone: .neutral)
         StatusPill(verbatim: "symlink", tone: .info)
-        // Trạng thái biên: chữ rất dài phải cắt gọn, không đẩy vỡ bố cục.
+        // Edge case: very long text must truncate without breaking the layout.
         StatusPill("a very long status label that should truncate cleanly", tone: .warning)
     }
     .padding(Space.lg)

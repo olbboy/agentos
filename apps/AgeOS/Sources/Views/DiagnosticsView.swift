@@ -2,10 +2,10 @@ import SwiftUI
 import AppKit
 import AgeOSCore
 
-/// Một màn duy nhất trả lời "có gì sai không", phân theo mức nghiêm trọng.
+/// One screen that answers "is anything wrong", ordered by how serious it is.
 ///
-/// `doctor --fix` KHÔNG nằm trên toolbar. Nó là hành động phá huỷ duy nhất trong
-/// app — đặt cạnh Scan và Rerun trên thanh công cụ là mời người ta bấm nhầm.
+/// `doctor --fix` is NOT on the toolbar. It is the only destructive action in the
+/// app, and sitting next to Scan and Rerun invites a misclick.
 struct DiagnosticsView: View {
     @Environment(AppModel.self) private var model
     @State private var confirmFix = false
@@ -14,8 +14,8 @@ struct DiagnosticsView: View {
         all.filter { $0.severity == severity }
     }
 
-    /// Số việc `doctor --fix` thực sự sẽ làm. Dùng cho cả nhãn nút lẫn confirm —
-    /// một nguồn, nên hai chỗ không thể lệch nhau.
+    /// How many things `doctor --fix` will actually do. Used for both the button label
+    /// and the confirmation — one source, so the two cannot disagree.
     private var fixableFindings: [Doctor.Finding] {
         model.doctorFindings.filter { $0.fixable && !$0.fixed }
     }
@@ -24,9 +24,9 @@ struct DiagnosticsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.xl) {
                 if model.hasRunDiagnostics {
-                    // Đọc MỘT lần cho cả lần render. `diagnostics` với library ~100
-                    // skill dễ lên 150-250 phần tử, và `body` chạy lại mỗi khi
-                    // `busy` đổi — gọi lại property ở từng nhóm là phí thuần tuý.
+                    // Read it ONCE for the whole render. With a library of ~100 skills
+                    // `diagnostics` easily reaches 150-250 entries, and `body` runs again
+                    // on every change to `busy` — re-reading it per group is pure waste.
                     let all = model.diagnostics
                     summaryBar
                     ForEach(DiagnosticSeverity.allCases, id: \.self) { severity in
@@ -52,10 +52,10 @@ struct DiagnosticsView: View {
         }
     }
 
-    // MARK: - Ba trạng thái tách bạch
+    // MARK: - Three states kept apart
 
-    /// "Chưa quét" khác hẳn "quét rồi và sạch". Gộp hai cái thành một màn trống là
-    /// bỏ mất thông tin người dùng cần.
+    /// "Not checked" is very different from "checked and clean". Collapsing them into
+    /// one blank screen throws away something the user needs.
     private var notCheckedYet: some View {
         SectionCard(title: "Not checked yet",
                     subtitle: "Diagnostics compares the lockfile against what is actually on disk, and scans every loaded skill for duplicates, deprecation and description problems.") {
@@ -91,13 +91,13 @@ struct DiagnosticsView: View {
         }
     }
 
-    // MARK: - Nhóm theo severity
+    // MARK: - Grouped by severity
 
     private func group(_ severity: DiagnosticSeverity, _ all: [DiagnosticItem]) -> some View {
         let rows = items(all, severity)
         return SectionCard(title: severity.title, count: rows.count) {
             if rows.isEmpty {
-                // Thu gọn, KHÔNG ẩn: người dùng cần biết là đã kiểm và sạch.
+                // Collapsed, NOT hidden: the user needs to know it was checked and is clean.
                 Text(severity.emptyMessage)
                     .font(.ageCallout)
                     .foregroundStyle(Color.ageTextSecondary)
@@ -116,13 +116,13 @@ struct DiagnosticsView: View {
         }
     }
 
-    /// Hành động cho từng loại finding.
+    /// The action for each kind of finding.
     ///
-    /// Chỉ MỘT loại thực sự đổi trạng thái ở cấp dòng: "Disable everywhere" cho
-    /// deprecated, vì `model.toggle` lọc được theo skill. Mọi thứ còn lại là điều
-    /// hướng (Reveal, Compare) hoặc dồn vào CTA cuối màn — `Doctor.run(fix:)` là
-    /// all-or-nothing, không nhận filter, nên một nút "Repair" cho riêng một dòng
-    /// sẽ là lời nói dối.
+    /// Only ONE actually changes state at row level: "Disable everywhere" for a
+    /// deprecated skill, because `model.toggle` can filter by skill. Everything else is
+    /// navigation (Reveal, Compare) or belongs to the screen-level CTA — `Doctor.run(fix:)`
+    /// is all-or-nothing and takes no filter, so a "Repair" button on a single row
+    /// would be a lie.
     private func action(for item: DiagnosticItem) -> (title: LocalizedStringKey, run: () -> Void)? {
         switch item.source {
         case .doctor(let finding):
@@ -134,10 +134,10 @@ struct DiagnosticsView: View {
 
         case .deprecated(let deprecated):
             return ("Disable everywhere", {
-                // Chặn bấm lần hai khi lần một chưa xong. Không có guard này, Task
-                // thứ hai đọc `isEnabled` còn cũ, gọi disable cho adapter đã gỡ, và
-                // `LinkEngine.disable` throw `.notFound` → banner báo lỗi giả cho
-                // một thao tác thực chất đã thành công.
+                // Block a second press while the first is still running. Without this
+                // guard the second Task reads a stale `isEnabled`, calls disable on an
+                // adapter already removed, and `LinkEngine.disable` throws `.notFound` →
+                // a false error banner for an operation that actually succeeded.
                 guard !model.busy else { return }
                 Task {
                     for adapter in model.matrixAdapters
@@ -151,11 +151,11 @@ struct DiagnosticsView: View {
         case .duplicatePath(_, _, let paths):
             return ("Reveal in Finder", { paths.forEach(reveal) })
 
-        // Máy không viết hộ được description — nói thẳng thay vì gắn nút giả.
+        // No machine writes a description for you — say so rather than fake a button.
         case .lint:
             return nil
 
-        // Không phải một vấn đề để sửa, mà là một phép kiểm KHÔNG chạy được.
+        // Not a problem to fix, but a check that could NOT run.
         case .scanNote:
             return nil
         }
@@ -166,7 +166,7 @@ struct DiagnosticsView: View {
             [URL(fileURLWithPath: (path as NSString).expandingTildeInPath)])
     }
 
-    // MARK: - Ghi chú và vùng phá huỷ
+    // MARK: - Method note and the destructive zone
 
     private var methodNote: some View {
         Text("Errors mean distribution is actually broken. Warnings mean state has drifted and will surprise you later. Info is description quality — it never affects whether a skill loads.")
@@ -196,8 +196,8 @@ struct DiagnosticsView: View {
         "Repair \(fixableFindings.count) findings?"
     }
 
-    /// Liệt kê CỤ THỂ từng việc, và tách riêng dòng `copy_drift` — đó là loại duy
-    /// nhất ĐÈ lên chỉnh sửa tay của người dùng.
+    /// Lists each item SPECIFICALLY, and calls out `copy_drift` separately — it is the
+    /// only kind that OVERWRITES edits the user made by hand.
     private var fixDialogDetail: String {
         let drift = fixableFindings.filter { $0.kind == .copyDrift }
         var lines = fixableFindings.map { "• [\($0.kind.rawValue)] \($0.path)" }

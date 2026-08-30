@@ -1,13 +1,13 @@
 import SwiftUI
 import AgeOSCore
 
-/// MÀN ĐINH: bảng skill × agent, toggle enable/disable global scope.
-/// Trạng thái đọc từ lockfile (nguồn chân lý) — FSEvents đổi là bảng tự cập nhật.
+/// THE CENTRAL SCREEN: a skill-by-agent grid with global-scope enable/disable toggles.
+/// State is read from the lockfile (the source of truth) — an FSEvents change updates it.
 ///
-/// Vấn đề của bản cũ: lưới switch mini không màu, liếc qua không ra agent nào đang
-/// bật gì. Bản này thêm tint nền theo trạng thái, và đưa mode + verified từ tooltip
-/// lên header cột — "adapter chưa verified" là thứ cần biết TRƯỚC khi bật, không
-/// phải sau khi rê chuột.
+/// The old version's problem: a grid of colorless mini switches you could not read at
+/// a glance. This one tints rows by state and moves mode and verified status out of the
+/// tooltip into the column header — whether an adapter is verified is something you
+/// want to know BEFORE enabling it, not after hovering.
 struct TargetMatrixView: View {
     @Environment(AppModel.self) private var model
     @State private var query = ""
@@ -45,8 +45,9 @@ struct TargetMatrixView: View {
         }
     }
 
-    /// Header cột mang mode và verified. `Table` chỉ nhận `String` cho tiêu đề cột
-    /// nên gộp vào một dòng, chấp nhận thay vì đánh đổi bằng bố cục phức tạp hơn.
+    /// The column header carries mode and verified status. `Table` only accepts a
+    /// `String` for a column title, so it folds into one line — accepted, rather than
+    /// trading it for a more complicated layout.
     private func columnTitle(_ adapter: AdapterSpec) -> String {
         let mode = adapter.effectiveSkillMode.rawValue
         let verified = (adapter.skills?.verified ?? false) ? "" : " ⚠"
@@ -56,8 +57,8 @@ struct TargetMatrixView: View {
     private func skillCell(_ skill: IndexDB.SkillRow) -> some View {
         let count = model.enabledAdapterCount(skillId: skill.id)
         return HStack(spacing: Space.sm) {
-            // Chỉ báo KHÔNG phụ thuộc màu, đứng cạnh tint nền: người mù màu và
-            // người dùng VoiceOver vẫn phân biệt được dòng đang bật.
+            // A shape indicator that does NOT depend on color, next to the row tint: a
+            // color-blind user and a VoiceOver user can both still tell enabled rows apart.
             Image(systemName: count > 0 ? "largecircle.fill.circle" : "circle")
                 .font(.ageCaption)
                 .foregroundStyle(count > 0 ? Color.ageAccentBrand : Color.ageBorderSubtle)
@@ -74,8 +75,8 @@ struct TargetMatrixView: View {
         }
         .padding(.vertical, Space.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // AnyShapeStyle vì `.quinary` trả về opaque type, không cùng kiểu với Color
-        // nên hai nhánh của `? :` không khớp nếu để trần.
+        // AnyShapeStyle because `.quinary` returns an opaque type, which is not the same
+        // type as Color, so the two branches of `? :` would not match bare.
         .background(count > 0 ? AnyShapeStyle(Color.ageAccentBrand.quinary)
                               : AnyShapeStyle(Color.clear))
         .accessibilityElement(children: .combine)

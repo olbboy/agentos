@@ -1,19 +1,20 @@
 import SwiftUI
 import AgeOSCore
 
-/// Library browser: search + filter, add nguồn, sync.
+/// Library browser: search and filter, add a source, sync.
 ///
-/// Mỗi dòng phải mang đủ thông tin để QUYẾT ĐỊNH có bật skill này không. Chỉ id +
-/// version + description thì chưa đủ — không biết nó đến từ đâu, tốn bao nhiêu
-/// token, và đang bật ở mấy agent rồi.
+/// Every row has to carry enough to DECIDE whether to enable a skill. Id, version and
+/// description are not enough — they say nothing about where it came from, what it
+/// costs in tokens, or how many agents already load it.
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @State private var query = ""
     @State private var newSource = ""
     @State private var filter = Filter()
 
-    /// Ba chiều lọc gom vào một `Menu` thay vì ba control rời trên toolbar —
-    /// ít mực hơn, và với đúng 3 facet thì dropdown gọn hơn sidebar cố định.
+    /// Three filter dimensions folded into one `Menu` rather than three separate
+    /// toolbar controls — less ink, and for exactly three facets a dropdown beats a
+    /// permanent sidebar.
     struct Filter {
         var sourceId: String? = nil
         var deprecatedOnly = false
@@ -103,8 +104,8 @@ struct LibraryView: View {
         .accessibilityIdentifier("library.filterMenu")
         .accessibilityLabel("Filter skills")
         .accessibilityValue(filter.isActive ? "filters active" : "no filters")
-        // Audit `.action` báo MenuButton này không phơi hành động nào. Nói rõ nó mở
-        // ra cái gì thay vì để VoiceOver chỉ đọc "menu button".
+        // The `.action` audit reports that this MenuButton exposes no action. Say what
+        // it opens instead of leaving VoiceOver to read only "menu button".
         .accessibilityHint("Opens filter options for source, deprecation and enabled state")
     }
 
@@ -112,7 +113,8 @@ struct LibraryView: View {
 
     private func row(_ skill: IndexDB.SkillRow) -> some View {
         let enabledCount = model.enabledAdapterCount(skillId: skill.id)
-        // Tra bảng đã tính sẵn thay vì tính lại mỗi lần render — xem
+        // Look it up in the precomputed table rather than recomputing per render — see
+        // AppModel.skillTokenEstimates.
         // AppModel.skillTokenEstimates.
         let tokens = model.skillTokenEstimates[skill.id]
 
@@ -151,8 +153,8 @@ struct LibraryView: View {
         .accessibilityValue(spokenRow(skill, tokens: tokens, enabledCount: enabledCount))
     }
 
-    /// Mọi thứ ba chip kia nói bằng hình phải nói lại bằng lời — người dùng
-    /// VoiceOver không thấy được màu hay icon.
+    /// Everything those three chips say visually has to be said again in words — a
+    /// VoiceOver user sees neither the color nor the icon.
     private func spokenRow(_ skill: IndexDB.SkillRow,
                            tokens: Int?, enabledCount: Int) -> String {
         var parts = [String(localized: "from \(skill.sourceId)"),

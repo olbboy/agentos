@@ -2,8 +2,8 @@ import SwiftUI
 import AppKit
 import AgeOSCore
 
-/// Cửa sổ Settings. Khác `MenuBarView`, đây là view thường nên áp được component
-/// dùng chung.
+/// The Settings window. Unlike `MenuBarView` this is an ordinary view, so the shared
+/// components apply here.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
 
@@ -17,8 +17,8 @@ struct SettingsView: View {
                                 Button("Reveal in Finder") {
                                     NSWorkspace.shared.activateFileViewerSelecting([libraryRoot])
                                 })) {
-                    // Path đang hiện dạng text không bấm được — đó là thứ người dùng
-                    // hay muốn mở nhất trong màn này.
+                    // The path was shown as text you could not click — and it is the thing
+                    // people most often want to open from this screen.
                     Text(verbatim: libraryRoot.path)
                         .font(.ageCaption)
                         .foregroundStyle(Color.ageTextSecondary)

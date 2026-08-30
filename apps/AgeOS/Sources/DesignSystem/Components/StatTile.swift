@@ -1,17 +1,17 @@
 import SwiftUI
 
-/// Một con số lớn + nhãn, tuỳ chọn mẫu số.
+/// One large number plus a label, with an optional denominator.
 ///
-/// Mẫu số (`outOf`) tồn tại vì "12" đứng một mình không nói được gì — "12 / 20"
-/// thì có. Khi không có mẫu số tự nhiên thì bỏ trống, đừng bịa ra một cái.
+/// `outOf` exists because "12" on its own says nothing while "12 / 20" does. When
+/// there is no natural denominator, leave it out rather than inventing one.
 struct StatTile: View {
     let value: String
-    /// Nhãn là văn xuôi cần dịch — xem ghi chú trong StatusPill về lý do
-    /// KHÔNG dùng `String` ở đây.
+    /// The label is prose that needs translating — see the note in StatusPill for why
+    /// NOT to use `String` here.
     let label: LocalizedStringKey
-    /// Mẫu số tuỳ chọn — hiện dạng "value / outOf".
+    /// Optional denominator — rendered as "value / outOf".
     var outOf: String? = nil
-    /// Có deep-link đi đâu không. `nil` = tile chỉ để đọc.
+    /// Whether this deep-links anywhere. `nil` = the tile is read-only.
     var action: (() -> Void)? = nil
 
     private var spokenValue: String {
@@ -36,7 +36,7 @@ struct StatTile: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
-                // verbatim: đây là dữ liệu đã định dạng sẵn, không phải chuỗi cần dịch.
+                // verbatim: this is pre-formatted data, not a string to translate.
                 Text(verbatim: value)
                     .font(.ageDisplayL)
                     .foregroundStyle(Color.ageTextPrimary)
@@ -67,7 +67,7 @@ struct StatTile: View {
         StatTile(value: "128", label: "distinct skills")
         StatTile(value: "6", label: "agents detected")
         StatTile(value: "12", label: "managed by AgeOS", outOf: "128")
-        // Biên: 0 và một số rất lớn phải cùng nằm gọn.
+        // Edge cases: 0 and a very large number both have to fit.
         StatTile(value: "0", label: "loaded in 2+ agents")
         StatTile(value: "1284093", label: "a deliberately long label that wraps to two lines")
     }

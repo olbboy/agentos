@@ -1,24 +1,25 @@
 import SwiftUI
 
-/// Một dòng chẩn đoán: icon severity + chip trạng thái + thông điệp + hành động.
+/// One diagnostic row: severity icon, status chip, message, action.
 ///
-/// `action == nil` KHÔNG để trống chỗ nút — nó hiện "No automatic fix". Ô trống
-/// đọc như thiếu sót; một câu nói rõ thì đó là kết luận.
+/// `action == nil` does NOT leave the button slot empty — it shows "No automatic
+/// fix". A blank reads as an omission; a sentence reads as a conclusion.
 struct FindingRow: View {
     let severity: PillTone
     let message: String
-    /// Nhãn trạng thái. Bỏ trống thì suy ra từ việc có hành động hay không.
+    /// The status label. Left out, it is inferred from whether there is an action.
     ///
-    /// Phải tách khỏi `action` vì hai thứ này KHÔNG một-đối-một: một finding có thể
-    /// mang trạng thái "Fixable" (do CTA toàn màn lo) mà hành động tại dòng chỉ là
-    /// "Reveal in Finder". Gộp lại sẽ nói dối về việc nút đó làm gì.
+    /// It has to stay separate from `action` because the two are NOT one-to-one: a
+    /// finding can be "Fixable" (by the screen-level CTA) while its row action is only
+    /// "Reveal in Finder". Merging them would lie about what the button does.
     var status: LocalizedStringKey? = nil
-    /// `nil` = không có hành động tự động cho dòng này.
+    /// `nil` = no automatic action for this row.
     var action: (title: LocalizedStringKey, run: () -> Void)? = nil
-    /// Dòng phụ hiện path hoặc id — dữ liệu, không phải văn xuôi.
+    /// The secondary line showing a path or id — data, not prose.
     var detail: String? = nil
 
-    /// Mặc định nói thẳng khi không sửa tự động được, thay vì để chip trống.
+    /// By default, say plainly that nothing can be fixed automatically rather than
+    /// leaving the chip blank.
     var effectiveStatus: LocalizedStringKey {
         status ?? (action == nil ? "No automatic fix" : "Fixable")
     }
@@ -38,7 +39,7 @@ struct FindingRow: View {
             Image(systemName: icon)
                 .font(.ageBody)
                 .foregroundStyle(severity.foreground)
-                .accessibilityHidden(true)   // severity đã nằm trong accessibilityLabel
+                .accessibilityHidden(true)   // severity is already in accessibilityLabel
 
             VStack(alignment: .leading, spacing: Space.xs) {
                 Text(verbatim: message)
@@ -53,9 +54,9 @@ struct FindingRow: View {
                         .textSelection(.enabled)
                 }
             }
-            // Gộp RIÊNG phần chữ, không gộp cả hàng: gộp cả hàng sẽ nuốt mất nhãn
-            // riêng của nút hành động, và bỏ rơi `detail` — hai finding khác path
-            // sẽ đọc lên giống hệt nhau.
+            // Combine ONLY the text, not the whole row: combining the row swallows the
+            // action button's own label and drops `detail` — two findings with different
+            // paths would then read out identically.
             .accessibilityElement(children: .combine)
             .accessibilityLabel(Text(verbatim: "\(severityWord): \(message)"))
             .accessibilityValue(Text(verbatim: detail ?? ""))
@@ -97,12 +98,12 @@ struct FindingRow: View {
                    action: ("Reveal in Finder", {}),
                    detail: "~/.codex/skills/pdf")
         Divider().overlay(Color.ageBorderSubtle)
-        // Biên: không có hành động -> phải nói rõ, không để trống.
+        // Edge case: no action -> it must say so, not leave a blank.
         FindingRow(severity: .info,
-                   // Không truyền status: view tự suy ra "No automatic fix".
+                   // No status passed: the view infers "No automatic fix".
                    message: "Description is 24 characters — too short for an agent to tell when to use it")
         Divider().overlay(Color.ageBorderSubtle)
-        // Biên: thông điệp rất dài phải xuống dòng, không cắt cụt.
+        // Edge case: a very long message must wrap, not truncate.
         FindingRow(severity: .warning,
                    message: "A deliberately long finding message that has to wrap across several lines so we can confirm the row grows downward instead of truncating the explanation the user actually needs to read",
                    status: "Action required",

@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Khối nội dung có tiêu đề, thay cho `GroupBox` trần.
+/// A titled block of content, replacing a bare `GroupBox`.
 ///
-/// Có `action` tuỳ chọn ở góc phải vì phần lớn section trong AgeOS đều kèm một
-/// việc làm được ngay tại chỗ (Rerun scan, Sync, Measure). Nhét nút đó lên toolbar
-/// sẽ tách hành động khỏi thứ mà nó tác động.
+/// It takes an optional action in the corner because most sections in AgeOS carry
+/// something you can do right there (Rerun scan, Sync, Measure). Putting that button
+/// on the toolbar would separate the action from what it acts on.
 struct SectionCard<Content: View>: View {
     private let titleText: Text
     private let subtitleText: Text?
@@ -12,7 +12,7 @@ struct SectionCard<Content: View>: View {
     var accessory: AnyView? = nil
     @ViewBuilder var content: Content
 
-    /// Tiêu đề là văn xuôi cần dịch — xem ghi chú trong StatusPill.
+    /// The title is prose that needs translating — see the note in StatusPill.
     init(title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil,
          count: Int? = nil, accessory: AnyView? = nil,
          @ViewBuilder content: () -> Content) {
@@ -23,7 +23,7 @@ struct SectionCard<Content: View>: View {
         self.content = content()
     }
 
-    /// Tiêu đề là DỮ LIỆU (adapter id) hoặc chuỗi đã localize sẵn ở nơi khác.
+    /// The title is DATA (an adapter id) or a string already localized elsewhere.
     init(verbatimTitle: String, count: Int? = nil, accessory: AnyView? = nil,
          @ViewBuilder content: () -> Content) {
         self.titleText = Text(verbatim: verbatimTitle)
@@ -81,7 +81,7 @@ struct SectionCard<Content: View>: View {
                     accessory: AnyView(Button("Measure") {})) {
             RatioMeter(value: 4200, threshold: 10000, scaleMax: 20000)
         }
-        // Biên: không có nội dung, tiêu đề rất dài.
+        // Edge case: no content, and a very long title.
         SectionCard(title: "A section title long enough to test how the header wraps",
                     count: 0) {
             Text("No errors")

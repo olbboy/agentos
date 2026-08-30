@@ -1,11 +1,11 @@
 import SwiftUI
 import AgeOSCore
 
-/// MCP manager: enable per-client, health, cảnh báo env nhạy cảm.
+/// MCP manager: per-client enable, health, and the sensitive-env warning.
 ///
-/// Tách Enabled / Available thay vì một list phẳng: thứ đang chạy trên máy và thứ
-/// mới chỉ nằm trong library là hai câu hỏi khác nhau, trộn lại thì phải đọc từng
-/// dòng mới biết cái nào là cái nào.
+/// Enabled and Available are split rather than one flat list: what is running on the
+/// machine and what merely sits in the library are different questions, and mixing
+/// them means reading every row to tell which is which.
 struct McpView: View {
     @Environment(AppModel.self) private var model
 
@@ -97,8 +97,8 @@ struct McpView: View {
             }
 
             if !server.sensitiveEnvKeys.isEmpty {
-                // Nội dung cảnh báo giữ nguyên — nó đúng và người dùng cần biết
-                // trước khi enable, chỉ đổi cách trình bày.
+                // The warning text is unchanged — it is correct and the user needs it
+                // before enabling. Only its presentation changed.
                 StatusPill("plaintext env: \(server.sensitiveEnvKeys.joined(separator: ", "))",
                            tone: .warning, icon: "key")
                 Text("These values sit in plaintext inside the client config. Keychain storage lands in v1.1.")

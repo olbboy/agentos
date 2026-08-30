@@ -1,14 +1,15 @@
 import SwiftUI
 
-/// Màn trống: icon + tiêu đề + giải thích, tuỳ chọn một hành động.
+/// An empty screen: icon, title, explanation, and an optional action.
 ///
-/// Vì sao không dùng `ContentUnavailableView` của SwiftUI: audit `.contrast` đo
-/// được chữ của nó KHÔNG đạt trên nền của app — 9 lần fail trên 6 màn. Nó tự chọn
-/// màu `.secondary` và không cho ghi đè, nên cách duy nhất kiểm soát được tỉ lệ là
-/// tự dựng bằng token đã đo (`textPrimary` 17.43:1, `textSecondary` 6.54:1).
+/// Why not SwiftUI's `ContentUnavailableView`: the `.contrast` audit measured its
+/// text as failing against the app's background — 9 failures across 6 screens. It
+/// picks `.secondary` itself and does not allow an override, so the only way to
+/// control the ratio is to build it from measured tokens (`textPrimary` 17.43:1,
+/// `textSecondary` 6.54:1).
 ///
-/// Đây cũng là bề mặt người dùng mới gặp ĐẦU TIÊN, nên nó là chỗ tệ nhất để chữ
-/// khó đọc.
+/// This is also the FIRST surface a new user meets, which makes it the worst place
+/// for text that is hard to read.
 struct EmptyState: View {
     let icon: String
     let title: LocalizedStringKey

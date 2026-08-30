@@ -2,12 +2,12 @@ import SwiftUI
 import AppKit
 import AgeOSCore
 
-/// Nội dung của `MenuBarExtra`.
+/// The contents of `MenuBarExtra`.
 ///
-/// RÀNG BUỘC quan trọng: đây là **menu của hệ thống**, không phải view thường.
-/// macOS chỉ nhận một tập control hạn chế — `SectionCard`, `StatTile`, `RatioMeter`
-/// KHÔNG render được ở đây. Nên phase design system với màn này là "nói đúng thông
-/// tin bằng menu item", không phải "áp component".
+/// An important CONSTRAINT: this is a **system menu**, not an ordinary view. macOS
+/// accepts only a limited set of controls — `SectionCard`, `StatTile` and `RatioMeter`
+/// do NOT render here. So the design-system work for this surface is "say the right
+/// thing in menu items", not "apply the components".
 struct MenuBarView: View {
     @Environment(AppModel.self) private var model
 
@@ -17,8 +17,8 @@ struct MenuBarView: View {
 
         Text("AgeOS — \(managed) skills managed")
 
-        // Cùng nguồn đếm với Overview và Diagnostics, nên ba bề mặt không thể
-        // báo ba con số khác nhau.
+        // The same count Overview and Diagnostics read, so the three surfaces cannot
+        // report three different numbers.
         if model.hasRunDiagnostics {
             let total = summary.errors + summary.warnings + summary.info
             if total == 0 {
@@ -34,17 +34,17 @@ struct MenuBarView: View {
 
         Divider()
 
-        // Trước đây đóng cửa sổ chính là hết đường quay lại, chỉ còn cách thoát app.
+        // Closing the main window used to be a dead end — the only way back was to quit.
         //
-        // Không dùng `openWindow(id:)`: muốn vậy thì WindowGroup phải có id, mà đo
-        // được là đặt id khiến app khởi động không mở cửa sổ nào. Thay vào đó gọi
-        // đúng đường mà macOS chạy khi người dùng bấm icon Dock — SwiftUI tự dựng
-        // lại cửa sổ của WindowGroup.
+        // Not `openWindow(id:)`: that needs an id on the WindowGroup, and giving it one
+        // was measured to stop the app opening any window at launch. Instead this calls
+        // the path macOS itself runs when the user clicks the Dock icon, and SwiftUI
+        // rebuilds the WindowGroup's window.
         Button("Open AgeOS") {
             NSApp.activate(ignoringOtherApps: true)
-            // Loại cửa sổ Settings ra: nó cũng canBecomeMain, nên nếu người dùng
-            // đóng cửa sổ chính rồi mở Settings, đường cũ sẽ chỉ đưa Settings lên
-            // trước và cửa sổ chính không bao giờ quay lại.
+            // Exclude the Settings window: it is also canBecomeMain, so if the user
+            // closes the main window and opens Settings, the old path would only bring
+            // Settings forward and the main window would never come back.
             if let existing = NSApp.windows.first(where: {
                 $0.canBecomeMain && $0.identifier?.rawValue != "com_apple_SwiftUI_Settings_window"
             }) {

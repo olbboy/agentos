@@ -1,20 +1,20 @@
 import SwiftUI
 import AgeOSCore
 
-/// Màn đích khi mở app. Trả lời câu hỏi đầu tiên người dùng có — "máy tôi đang ra
-/// sao" — bằng dữ liệu quét từ máy thật, kể cả khi library còn rỗng.
+/// The screen the app opens on. It answers the first question a user has — "what
+/// does my machine look like" — from a real scan, even when the library is empty.
 ///
-/// Mọi tile ở đây phải dẫn đi đâu đó hoặc làm được việc gì đó. Tile chỉ hiện số mà
-/// không bấm được thì bỏ khỏi màn này — thà ít tile mà mỗi tile có đích đến.
+/// Every tile here has to lead somewhere or do something. A tile that only shows a
+/// number and cannot be clicked was dropped: better few tiles that each go somewhere.
 struct OverviewView: View {
     @Environment(AppModel.self) private var model
     @Binding var selection: Destination
 
     @State private var confirmImport = false
-    /// Kết quả lần import gần nhất. PHẢI giữ lại: `adoptImport` bắt lỗi từng skill
-    /// vào `AdoptReport.errors` và KHÔNG throw, nên nếu vứt report đi thì lỗi copy
-    /// từng skill sẽ không bao giờ tới được `lastError`/ErrorBanner — người dùng
-    /// tưởng import xong hết trong khi có skill âm thầm thất bại.
+    /// The most recent import result. It MUST be kept: `adoptImport` catches per-skill
+    /// failures into `AdoptReport.errors` and does NOT throw, so discarding the report
+    /// means a copy failure never reaches `lastError` or the ErrorBanner — the user
+    /// believes everything imported while some skills silently failed.
     @State private var adoptResult: EffectiveLoadScanner.AdoptReport?
 
     var body: some View {
@@ -46,9 +46,9 @@ struct OverviewView: View {
 
     // MARK: - Cold start
 
-    /// Chỉ hiện khi library rỗng. Số liệu lấy từ `inventory`, thứ đã được quét trong
-    /// `AppModel.start()` — nên màn này có nội dung thật ngay lần mở đầu tiên, chứ
-    /// không phải một khung trống chờ người dùng làm gì đó trước.
+    /// Shown only when the library is empty. The numbers come from `inventory`, which
+    /// `AppModel.start()` already scanned — so this screen has real content on the very
+    /// first launch, rather than an empty frame waiting for the user to do something.
     private var coldStartHero: some View {
         SectionCard(title: "Start here",
                     subtitle: "AgeOS found skills already installed on this Mac. Import them to manage every agent from one library.") {
@@ -72,8 +72,8 @@ struct OverviewView: View {
         }
     }
 
-    /// Kết quả import, kèm DANH SÁCH LỖI từng skill. Bản cũ (AdoptView) có phần
-    /// này; bỏ đi là mất đường duy nhất để người dùng biết skill nào không vào được.
+    /// The import result, including the PER-SKILL ERROR LIST. The old AdoptView had
+    /// this; dropping it removes the only way to learn which skill did not make it.
     private func importResult(_ result: EffectiveLoadScanner.AdoptReport) -> some View {
         SectionCard(title: "Import result",
                     accessory: AnyView(Button("Dismiss") { adoptResult = nil })) {
@@ -177,7 +177,7 @@ struct OverviewView: View {
         }
     }
 
-    /// Mỗi dòng là một deep-link sang Diagnostics — không phải một con số chết.
+    /// Each row is a deep link into Diagnostics — not a dead number.
     private func attentionRow(_ label: String, _ count: Int, _ tone: PillTone) -> some View {
         Button { selection = .diagnostics } label: {
             HStack(spacing: Space.sm) {
@@ -257,15 +257,16 @@ struct OverviewView: View {
                     .foregroundStyle(Color.ageTextSecondary)
             }
             Spacer()
-            // Import để thường trực, không chỉ lúc cold-start — người dùng cài thêm
-            // skill bằng tay sau này vẫn cần gom về.
-            // Quét lại inventory mà KHÔNG import. Bản cũ có nút này; thiếu nó thì
-            // cách duy nhất làm mới inventory là "Sync all sources" — nặng hơn nhiều
-            // và đụng network. Cũng là đường thoát khi lần quét lúc khởi động hỏng.
+            // Rescan the inventory WITHOUT importing. The old screen had this button;
+            // without it the only way to refresh the inventory is "Sync all sources",
+            // which is far heavier and touches the network. It is also the way out when
+            // the scan at launch failed.
             Button("Rescan this Mac") {
                 Task { _ = await model.runAdopt(importSkills: false) }
             }
             .disabled(model.busy)
+            // Import stays available, not just at cold start — someone who installs a
+            // skill by hand later still needs to gather it in.
             Button("Import unmanaged skills") { confirmImport = true }
                 .disabled(model.busy || model.inventory == nil)
             Button("Sync all sources") { Task { await model.syncAll() } }
