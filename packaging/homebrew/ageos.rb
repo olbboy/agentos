@@ -1,13 +1,13 @@
-# Template cask cho tap <owner>/homebrew-tap — điền version/sha256/owner khi publish.
+# Cask cho tap olbboy/homebrew-tap — sha256 điền từ checksums.txt của release.
 # Chưa ký Developer ID → hướng dẫn user: brew install --cask ageos --no-quarantine
 cask "ageos" do
   version "0.1.0"
   sha256 "PLACEHOLDER_SHA256_CUA_AgeOS-#{version}.zip"
 
-  url "https://github.com/OWNER/agentos/releases/download/v#{version}/AgeOS-v#{version}.zip"
+  url "https://github.com/olbboy/agentos/releases/download/v#{version}/AgeOS-v#{version}.zip"
   name "AgeOS"
   desc "One library for Agent Skills and MCP servers, distributed to every coding agent"
-  homepage "https://github.com/OWNER/agentos"
+  homepage "https://github.com/olbboy/agentos"
 
   depends_on macos: ">= :tahoe"
 

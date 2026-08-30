@@ -1,5 +1,5 @@
 # Sinh AgeOS.xcodeproj bằng: xcodegen generate (chạy trong apps/AgeOS/)
-# Bundle id đang là placeholder — chốt lại khi tạo repo public (Phase 7).
+# Bundle id chốt theo GitHub owner olbboy (repo public 30/8/2026).
 name: AgeOS
 options:
   deploymentTarget:
@@ -21,7 +21,7 @@ targets:
         product: AgeOSCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.owner.ageos
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.olbboy.ageos
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
