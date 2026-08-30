@@ -57,13 +57,60 @@ final class AppModel {
             let loadedInventory = scanner.scan()
             await MainActor.run {
                 self.skills = loadedSkills
+                self.skillTokenEstimates = self.recomputeTokenEstimates(loadedSkills)
                 self.sources = loadedSources
                 self.adapters = registry.adapters
                 self.lock = loadedLock
                 self.mcpServers = loadedMcp
                 self.inventory = loadedInventory
+                self.recomputeDiagnostics()
             }
         }
+    }
+
+    // MARK: - Diagnostics (nguồn đếm dùng chung)
+
+    /// Mọi vấn đề đang có, đã chuẩn hoá từ Doctor + Scan + inventory.
+    ///
+    /// Overview hiện số đếm, Diagnostics hiện chi tiết, menu bar hiện tổng — cả ba
+    /// đọc từ ĐÂY. Để mỗi màn tự tổng hợp là cách chắc chắn nhất khiến chúng báo ba
+    /// con số khác nhau cho cùng một tình trạng máy.
+    ///
+    /// LƯU TRỮ chứ không computed: linter chạy trên mọi skill nên với library ~100
+    /// skill danh sách này dễ lên 150-250 phần tử. `DiagnosticsView` đọc nó 4 lần
+    /// mỗi lần render (3 nhóm severity + summary bar), và mỗi lần `busy` đổi là một
+    /// lần re-render. Dựng lại từ đầu mỗi lần đọc là phí thuần tuý — cùng lý do đã
+    /// cache `skillTokenEstimates` bên dưới.
+    private(set) var diagnostics: [DiagnosticItem] = []
+
+    private(set) var attentionSummary: (errors: Int, warnings: Int, info: Int) = (0, 0, 0)
+
+    private func recomputeDiagnostics() {
+        diagnostics = DiagnosticsBuilder.build(doctorFindings: doctorFindings,
+                                               scanReport: scanReport,
+                                               inventory: inventory)
+        attentionSummary = (diagnostics.filter { $0.severity == .error }.count,
+                            diagnostics.filter { $0.severity == .warning }.count,
+                            diagnostics.filter { $0.severity == .info }.count)
+    }
+
+    /// Trục chung cho MỌI `RatioMeter` vẽ budget, dù ở Overview hay ở màn Budget.
+    ///
+    /// Sống ở đây chứ không nhân bản trong từng view: mục đích của nó là hai màn vẽ
+    /// trên CÙNG một thang. Nếu mỗi view giữ một bản sao công thức thì điều đó chỉ
+    /// đúng chừng nào không ai sửa lệch — không có compiler hay test nào ép được.
+    ///
+    /// Lấy cả threshold vào `max` để agent đang dưới ngưỡng vẫn thấy mình còn cách
+    /// ngưỡng bao xa, thay vì agent cao nhất luôn đầy khung.
+    var budgetScaleMax: Int {
+        max(budgets.map(\.totalTokens).max() ?? 0,
+            budgets.compactMap(\.warnThreshold).max() ?? 0)
+    }
+
+    /// Đã chạy chẩn đoán lần nào chưa. Khác hẳn với "đã chạy và sạch" — màn
+    /// Diagnostics phải phân biệt được hai trạng thái đó.
+    var hasRunDiagnostics: Bool {
+        scanReport != nil || !doctorFindings.isEmpty
     }
 
     // MARK: - Target Matrix
@@ -71,6 +118,32 @@ final class AppModel {
     /// Adapter hiển thị trong matrix: phát hiện được + hỗ trợ skills.
     var matrixAdapters: [AdapterSpec] {
         adapters.filter { $0.isDetected() && $0.skills != nil }
+    }
+
+    /// Token ước tính cho mỗi skill, tính MỘT LẦN khi `skills` đổi thay vì tính lại
+    /// ở mỗi lần render dòng. Công thức rẻ, nhưng gọi nó trên mọi dòng khi cuộn thì
+    /// vẫn là phí không cần thiết.
+    private(set) var skillTokenEstimates: [String: Int] = [:]
+
+    private func recomputeTokenEstimates(_ rows: [IndexDB.SkillRow]) -> [String: Int] {
+        var table: [String: Int] = [:]
+        for row in rows {
+            // truncateChars 0 = không cắt: đây là con số chung, không gắn adapter nào.
+            table[row.id] = BudgetMeter.skillTokens(name: row.name,
+                                                    description: row.description,
+                                                    truncateChars: 0)
+        }
+        return table
+    }
+
+    /// Số adapter PHÂN BIỆT đang bật skill này.
+    ///
+    /// Không dùng `targets.count`: key của `targets` là `<adapterId>@global` HOẶC
+    /// `<adapterId>@<projectPath>`, nên một adapter có thể chiếm nhiều entry và
+    /// `targets.count` sẽ đếm thừa.
+    func enabledAdapterCount(skillId: String) -> Int {
+        guard let targets = lock.skills[skillId]?.targets.keys else { return 0 }
+        return Set(targets.compactMap { $0.split(separator: "@").first.map(String.init) }).count
     }
 
     func isEnabled(skillId: String, adapterId: String) -> Bool {
@@ -83,7 +156,7 @@ final class AppModel {
             let registry = try makeAdapters()
             let linkEngine = LinkEngine(home: engine.home, store: engine.store, adapters: registry)
             guard let ref = SkillRef(id: skillId) else {
-                throw AgeOSError(.notFound, "Id không hợp lệ: \(skillId)")
+                throw AgeOSError(.notFound, "Invalid id: \(skillId)")
             }
             if enabled {
                 let row = try engine.index.resolveSkill(query: skillId)
@@ -120,7 +193,10 @@ final class AppModel {
             let engine = try makeEngine()
             let registry = try makeAdapters()
             let report = try ScanEngine(home: engine.home, adapters: registry, index: engine.index).run()
-            await MainActor.run { self.scanReport = report }
+            await MainActor.run {
+                self.scanReport = report
+                self.recomputeDiagnostics()
+            }
         }
     }
 
@@ -152,7 +228,10 @@ final class AppModel {
                     ? try await scanner.adoptImport(home: engine.home, engine: engine)
                     : nil
                 let loadedInventory = scanner.scan()
-                await MainActor.run { self.inventory = loadedInventory }
+                await MainActor.run {
+                    self.inventory = loadedInventory
+                    self.recomputeDiagnostics()
+                }
                 return adoptReport
             }.value
             lastError = nil
@@ -175,6 +254,7 @@ final class AppModel {
             await MainActor.run {
                 self.doctorFindings = findings
                 self.suggestsDoctor = false
+                self.recomputeDiagnostics()
             }
         }
         if fix { await refreshAll() }
