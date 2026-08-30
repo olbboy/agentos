@@ -1,8 +1,8 @@
-# Cask cho tap olbboy/homebrew-tap — sha256 điền từ checksums.txt của release.
+# Cask cho tap olbboy/homebrew-tap — sha256 của AgeOS-v0.1.0.zip (release 30/8/2026).
 # Chưa ký Developer ID → hướng dẫn user: brew install --cask ageos --no-quarantine
 cask "ageos" do
   version "0.1.0"
-  sha256 "PLACEHOLDER_SHA256_CUA_AgeOS-#{version}.zip"
+  sha256 "15ce470f6ba668a0a3dea55f481187cac0e8cce02c498ae3f7f4673e1d229952"
 
   url "https://github.com/olbboy/agentos/releases/download/v#{version}/AgeOS-v#{version}.zip"
   name "AgeOS"
