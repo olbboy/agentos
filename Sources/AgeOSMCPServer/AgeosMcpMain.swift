@@ -103,7 +103,7 @@ enum AgeosTools {
         switch name {
         case "search_skills":
             guard let query = str("query") else {
-                throw AgeOSError(.conflict, "Thiếu tham số query")
+                throw AgeOSError(.conflict, "Missing the query parameter")
             }
             let local = try engine.index.listSkills().filter {
                 $0.id.localizedCaseInsensitiveContains(query)
@@ -118,7 +118,7 @@ enum AgeosTools {
 
         case "skill_info":
             guard let query = str("skill") else {
-                throw AgeOSError(.conflict, "Thiếu tham số skill")
+                throw AgeOSError(.conflict, "Missing the skill parameter")
             }
             let row = try engine.index.resolveSkill(query: query)
             let parsed = try SkillParser.parse(directory: URL(fileURLWithPath: row.path, isDirectory: true))
@@ -142,7 +142,7 @@ enum AgeosTools {
 
         case "install_skill":
             guard let source = str("source") else {
-                throw AgeOSError(.conflict, "Thiếu tham số source (github owner/repo hoặc path)")
+                throw AgeOSError(.conflict, "Missing the source parameter (github owner/repo, or a path)")
             }
             let (descriptor, report) = try await engine.addSource(source)
             struct Out: Encodable {
@@ -156,14 +156,14 @@ enum AgeosTools {
 
         case "enable_skill", "disable_skill":
             guard let skill = str("skill"), let target = str("target") else {
-                throw AgeOSError(.conflict, "Thiếu tham số skill/target")
+                throw AgeOSError(.conflict, "Missing the skill or target parameter")
             }
             let project = str("project").map { URL(fileURLWithPath: $0, isDirectory: true) }
             let linkEngine = LinkEngine(home: home, store: engine.store, adapters: adapters)
             if name == "enable_skill" {
                 let row = try engine.index.resolveSkill(query: skill)
                 guard let ref = SkillRef(id: row.id) else {
-                    throw AgeOSError(.notFound, "Id không hợp lệ: \(row.id)")
+                    throw AgeOSError(.notFound, "Invalid id: \(row.id)")
                 }
                 return try json(try linkEngine.enable(ref, sourceId: row.sourceId,
                                                       adapterId: target, project: project))
@@ -172,7 +172,7 @@ enum AgeosTools {
                 let id = lock.skills[skill] != nil ? skill
                     : (lock.skills.keys.first { $0.hasSuffix("/\(skill)") } ?? skill)
                 guard let ref = SkillRef(id: id) else {
-                    throw AgeOSError(.notFound, "Id không hợp lệ: \(id)")
+                    throw AgeOSError(.notFound, "Invalid id: \(id)")
                 }
                 return try json(try linkEngine.disable(ref, adapterId: target, project: project))
             }
@@ -215,7 +215,7 @@ enum AgeosTools {
             return try json(try doctor.run(fix: fix))
 
         default:
-            throw AgeOSError(.notFound, "Tool không tồn tại: \(name)")
+            throw AgeOSError(.notFound, "No such tool: \(name)")
         }
     }
 }

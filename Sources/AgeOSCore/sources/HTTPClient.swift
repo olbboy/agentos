@@ -15,7 +15,7 @@ public struct URLSessionHTTPClient: HTTPClient {
         for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw AgeOSError(.network, "Phản hồi không phải HTTP từ \(url.host ?? "?")")
+            throw AgeOSError(.network, "Non-HTTP response from \(url.host ?? "?")")
         }
         return (data, http)
     }

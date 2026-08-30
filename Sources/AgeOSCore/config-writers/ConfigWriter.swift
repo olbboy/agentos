@@ -68,8 +68,8 @@ public enum ConfigBackup {
     public static func restoreLatest(of original: URL, home: AgeOSHome) throws -> BackupRecord {
         let matches = list(home: home).filter { $0.originalPath == original.path }
         guard let latest = matches.last else {
-            throw AgeOSError(.notFound, "Không có backup nào cho \(original.path)",
-                             remedy: "Xem danh sách: `ageos mcp restore-backup --list`")
+            throw AgeOSError(.notFound, "No backup exists for \(original.path)",
+                             remedy: "List them with `ageos mcp restore-backup --list`")
         }
         // Backup chính file hiện tại trước khi đè (revert cũng revert được).
         _ = try? backup(original, home: home)

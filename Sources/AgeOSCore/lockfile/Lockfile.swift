@@ -69,8 +69,8 @@ public struct Lockfile: Sendable, Codable, Equatable {
         do {
             return try JSONDecoder().decode(Lockfile.self, from: data)
         } catch {
-            throw AgeOSError(.lockfileCorrupt, "ageos.lock.json hỏng: \(error)",
-                             remedy: "Sửa tay hoặc xóa file rồi chạy `ageos reindex` + enable lại; backup nằm cạnh file")
+            throw AgeOSError(.lockfileCorrupt, "ageos.lock.json is malformed: \(error)",
+                             remedy: "Fix it by hand, or delete it and run `ageos reindex` plus re-enable; a backup sits next to the file")
         }
     }
 

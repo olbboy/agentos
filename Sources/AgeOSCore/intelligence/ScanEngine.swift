@@ -68,13 +68,13 @@ public struct ScanEngine: Sendable {
         } else {
             near = []
             nearAvailable = false
-            notes.append("Embedding assets không khả dụng — near-dupe bị bỏ qua (chỉ exact)")
+            notes.append("Embedding assets unavailable — near-duplicate detection skipped (exact only)")
         }
 
         // 3) Deprecated: index (repo archived) + frontmatter.
         var deprecated: [ScanReport.DeprecatedItem] = []
         for row in (try? index.listSkills()) ?? [] where row.deprecated {
-            deprecated.append(.init(id: row.id, reason: "nguồn archived hoặc frontmatter deprecated"))
+            deprecated.append(.init(id: row.id, reason: "source archived, or frontmatter marks it deprecated"))
         }
         for item in items {
             if let dir = item.directory, let parsed = try? SkillParser.parse(directory: dir),

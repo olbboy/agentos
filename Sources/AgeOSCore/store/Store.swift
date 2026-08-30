@@ -51,8 +51,8 @@ public struct Store: Sendable {
     public func setCurrent(_ ref: SkillRef, version: String) throws {
         let dest = versionDir(ref, version: version)
         guard fm.fileExists(atPath: dest.path) else {
-            throw AgeOSError(.notFound, "Version \(version) của \(ref.id) chưa được cài vào store",
-                             remedy: "Chạy `ageos sync` trước")
+            throw AgeOSError(.notFound, "Version \(version) of \(ref.id) is not installed in the store",
+                             remedy: "Run `ageos sync` first")
         }
         try AtomicFile.replaceSymlink(at: currentLink(ref), target: safeVersion(version))
     }

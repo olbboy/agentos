@@ -17,7 +17,7 @@ public struct AdapterRegistry: Sendable {
                 byId[spec.id] = spec
             } catch {
                 // Spec bundled hỏng là lỗi build của chính AgeOS — ném để CI bắt.
-                throw AgeOSError(.configUnreadable, "Adapter bundled hỏng \(url.lastPathComponent): \(error)")
+                throw AgeOSError(.configUnreadable, "Bundled adapter is malformed \(url.lastPathComponent): \(error)")
             }
         }
 
@@ -27,15 +27,15 @@ public struct AdapterRegistry: Sendable {
                 do {
                     let spec = try decoder.decode(AdapterSpec.self, from: Data(contentsOf: url))
                     guard spec.schemaVersion == 1 else {
-                        throw AgeOSError(.unsupported, "Adapter \(url.lastPathComponent) schemaVersion \(spec.schemaVersion) chưa hỗ trợ",
-                                         remedy: "AgeOS này hiểu schemaVersion 1 — cập nhật AgeOS hoặc sửa file")
+                        throw AgeOSError(.unsupported, "Adapter \(url.lastPathComponent) declares schemaVersion \(spec.schemaVersion), which is not supported",
+                                         remedy: "This AgeOS understands schemaVersion 1 — update AgeOS, or fix the file")
                     }
                     byId[spec.id] = spec // user override thắng
                 } catch let e as AgeOSError {
                     throw e
                 } catch {
-                    throw AgeOSError(.configUnreadable, "Adapter user hỏng \(url.path): \(error)",
-                                     remedy: "Sửa JSON hoặc xóa file để dùng bundled spec")
+                    throw AgeOSError(.configUnreadable, "User adapter is malformed \(url.path): \(error)",
+                                     remedy: "Fix the JSON, or delete the file to fall back to the bundled spec")
                 }
             }
         }
@@ -53,8 +53,8 @@ public struct AdapterRegistry: Sendable {
     public func adapter(id: String) throws -> AdapterSpec {
         guard let found = adapters.first(where: { $0.id == id }) else {
             let known = adapters.map(\.id).joined(separator: ", ")
-            throw AgeOSError(.notFound, "Không có adapter '\(id)'",
-                             remedy: "Adapter khả dụng: \(known). Thêm adapter mới bằng file JSON trong ~/.ageos/adapters/")
+            throw AgeOSError(.notFound, "No adapter named '\(id)'",
+                             remedy: "Available adapters: \(known). Add a new one with a JSON file in ~/.ageos/adapters/")
         }
         return found
     }

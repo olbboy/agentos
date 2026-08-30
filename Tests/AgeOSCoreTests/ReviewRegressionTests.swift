@@ -84,7 +84,7 @@ struct ReviewRegressionTests {
             try "---\nname: taken-copy\ndescription: upstream v2 that must not clobber\n---\nx"
                 .write(to: src.appendingPathComponent("taken-copy/SKILL.md"), atomically: true, encoding: .utf8)
             let reports = try await engine.sync()
-            #expect(reports[0].driftWarnings.contains { $0.contains("mất manifest") })
+            #expect(reports[0].driftWarnings.contains { $0.contains("no AgeOS manifest") })
             let onDisk = try SkillParser.parse(directory: dest)
             #expect(onDisk.manifest.description.contains("fully user-owned"))
         }

@@ -84,8 +84,8 @@ public struct McpLibrary: Sendable {
         do {
             return try JSONDecoder().decode([McpServerModel].self, from: data)
         } catch {
-            throw AgeOSError(.configUnreadable, "mcp-servers.json hỏng: \(error)",
-                             remedy: "Sửa tay \(path.path) hoặc xóa rồi add lại server")
+            throw AgeOSError(.configUnreadable, "mcp-servers.json is malformed: \(error)",
+                             remedy: "Fix \(path.path) by hand, or delete it and add the servers again")
         }
     }
 
@@ -114,11 +114,11 @@ public struct McpLibrary: Sendable {
         switch matches.count {
         case 1: return matches[0]
         case 0:
-            throw AgeOSError(.notFound, "MCP server '\(query)' chưa có trong library",
-                             remedy: "Add trước: `ageos mcp add <registry-name|file.mcpb>` hoặc xem `ageos mcp list`")
+            throw AgeOSError(.notFound, "MCP server '\(query)' is not in the library yet",
+                             remedy: "Add it first with `ageos mcp add <registry-name|file.mcpb>`, or see `ageos mcp list`")
         default:
-            throw AgeOSError(.conflict, "'\(query)' khớp nhiều server: \(matches.map(\.id).joined(separator: ", "))",
-                             remedy: "Dùng id đầy đủ")
+            throw AgeOSError(.conflict, "'\(query)' matches several servers: \(matches.map(\.id).joined(separator: ", "))",
+                             remedy: "Use the full id")
         }
     }
 }

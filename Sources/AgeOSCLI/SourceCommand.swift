@@ -5,17 +5,17 @@ import Foundation
 struct SourceCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "source",
-        abstract: "Quản lý nguồn skill (GitHub repo hoặc thư mục local).",
+        abstract: "Manage skill sources (a GitHub repo, or a local folder).",
         subcommands: [Add.self, List.self, Sync.self, Remove.self]
     )
 
     struct Add: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Thêm nguồn và sync ngay.")
+        static let configuration = CommandConfiguration(abstract: "Add a source and sync it right away.")
 
-        @Argument(help: "URL GitHub (https://github.com/owner/repo) hoặc path thư mục local.")
+        @Argument(help: "GitHub URL (https://github.com/owner/repo), or a local folder path.")
         var location: String
 
-        @Flag(name: .long, help: "Xuất JSON.")
+        @Flag(name: .long, help: "Emit JSON.")
         var json = false
 
         func run() async throws {
@@ -26,18 +26,18 @@ struct SourceCommand: AsyncParsableCommand {
                     CLIRuntime.printJSON(["source": descriptor.id, "version": report.version,
                                           "installed": "\(report.installed.count)", "skipped": "\(report.skippedCount)"])
                 } else {
-                    print("✓ Nguồn \(descriptor.id) @ \(report.version) — \(report.installed.count) skill")
-                    for detail in report.skippedDetails { print("  bỏ qua: \(detail)") }
-                    if report.archived { print("  ⚠ repo đã archive — skill sẽ bị đánh dấu deprecated") }
+                    print("✓ Source \(descriptor.id) @ \(report.version) — \(CLIRuntime.count(report.installed.count, "skill"))")
+                    for detail in report.skippedDetails { print("  skipped: \(detail)") }
+                    if report.archived { print("  ⚠ the repo is archived — its skills will be marked deprecated") }
                 }
             } catch { CLIRuntime.fail(error) }
         }
     }
 
     struct List: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Liệt kê nguồn đã add.")
+        static let configuration = CommandConfiguration(abstract: "List the sources you have added.")
 
-        @Flag(name: .long, help: "Xuất JSON.")
+        @Flag(name: .long, help: "Emit JSON.")
         var json = false
 
         func run() async throws {
@@ -47,10 +47,10 @@ struct SourceCommand: AsyncParsableCommand {
                 if json {
                     CLIRuntime.printJSON(sources)
                 } else if sources.isEmpty {
-                    print("Chưa có nguồn nào. Thêm bằng: ageos source add <github-url|path>")
+                    print("No sources yet. Add one with: ageos source add <github-url|path>")
                 } else {
                     for s in sources {
-                        let sync = s.lastSync.map { ISO8601DateFormatter().string(from: $0) } ?? "chưa sync"
+                        let sync = s.lastSync.map { ISO8601DateFormatter().string(from: $0) } ?? "never synced"
                         let flags = s.archived ? " [archived]" : ""
                         print("\(s.id)\t\(s.location)\t\(sync)\(flags)")
                     }
@@ -60,12 +60,12 @@ struct SourceCommand: AsyncParsableCommand {
     }
 
     struct Sync: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Sync một nguồn hoặc tất cả.")
+        static let configuration = CommandConfiguration(abstract: "Sync one source, or all of them.")
 
-        @Argument(help: "Id nguồn (vd gh/anthropics/skills). Bỏ trống = sync tất cả.")
+        @Argument(help: "Source id (for example gh/anthropics/skills). Leave empty to sync all.")
         var sourceId: String?
 
-        @Flag(name: .long, help: "Xuất JSON.")
+        @Flag(name: .long, help: "Emit JSON.")
         var json = false
 
         func run() async throws {
@@ -75,12 +75,12 @@ struct SourceCommand: AsyncParsableCommand {
                 if json {
                     CLIRuntime.printJSON(reports)
                 } else if reports.isEmpty {
-                    print("Không có nguồn nào để sync.")
+                    print("No sources to sync.")
                 } else {
                     for r in reports {
-                        let status = r.changed ? "\(r.installed.count) skill @ \(r.version)" : "không đổi (@ \(r.version))"
+                        let status = r.changed ? "\(CLIRuntime.count(r.installed.count, "skill")) @ \(r.version)" : "unchanged (@ \(r.version))"
                         print("✓ \(r.sourceId): \(status)")
-                        for detail in r.skippedDetails { print("  bỏ qua: \(detail)") }
+                        for detail in r.skippedDetails { print("  skipped: \(detail)") }
                     }
                 }
             } catch { CLIRuntime.fail(error) }
@@ -88,26 +88,26 @@ struct SourceCommand: AsyncParsableCommand {
     }
 
     struct Remove: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Gỡ nguồn khỏi registry (không xóa skill đã enable).")
+        static let configuration = CommandConfiguration(abstract: "Remove a source from the registry (enabled skills stay).")
 
-        @Argument(help: "Id nguồn cần gỡ.")
+        @Argument(help: "Id of the source to remove.")
         var sourceId: String
 
-        @Flag(name: .long, help: "Xuất JSON.")
+        @Flag(name: .long, help: "Emit JSON.")
         var json = false
 
         func run() async throws {
             do {
                 let engine = try CLIRuntime.makeEngine()
                 guard let removed = try engine.registry.remove(id: sourceId) else {
-                    throw AgeOSError(.notFound, "Nguồn '\(sourceId)' không tồn tại",
-                                     remedy: "Xem `ageos source list`")
+                    throw AgeOSError(.notFound, "Source '\(sourceId)' does not exist",
+                                     remedy: "See `ageos source list`")
                 }
                 try engine.index.removeSource(id: sourceId)
                 if json {
                     CLIRuntime.printJSON(["removed": removed.id])
                 } else {
-                    print("✓ Đã gỡ nguồn \(removed.id) (skill trong store giữ nguyên — dọn bằng `ageos reindex` nếu muốn)")
+                    print("✓ Removed source \(removed.id) (skills in the store are untouched — clean them with `ageos reindex` if you want)")
                 }
             } catch { CLIRuntime.fail(error) }
         }

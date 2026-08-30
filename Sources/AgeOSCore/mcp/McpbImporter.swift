@@ -30,7 +30,7 @@ public enum McpbImporter {
 
     public static func importBundle(at file: URL, home: AgeOSHome) throws -> McpServerModel {
         guard FileManager.default.fileExists(atPath: file.path) else {
-            throw AgeOSError(.notFound, "File không tồn tại: \(file.path)")
+            throw AgeOSError(.notFound, "File does not exist: \(file.path)")
         }
         let staging = home.cacheDir.appendingPathComponent("mcpb-\(UUID().uuidString.prefix(8))", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: staging) }
@@ -38,14 +38,14 @@ public enum McpbImporter {
 
         let manifestURL = staging.appendingPathComponent("manifest.json")
         guard let data = FileManager.default.contents(atPath: manifestURL.path) else {
-            throw AgeOSError(.invalidSource, "Bundle thiếu manifest.json: \(file.lastPathComponent)",
-                             remedy: "File .mcpb hợp lệ phải có manifest.json ở gốc")
+            throw AgeOSError(.invalidSource, "Bundle is missing manifest.json: \(file.lastPathComponent)",
+                             remedy: "A valid .mcpb file must contain manifest.json at its root")
         }
         let manifest: Manifest
         do {
             manifest = try JSONDecoder().decode(Manifest.self, from: data)
         } catch {
-            throw AgeOSError(.invalidSource, "manifest.json hỏng trong \(file.lastPathComponent): \(error)")
+            throw AgeOSError(.invalidSource, "manifest.json is malformed in \(file.lastPathComponent): \(error)")
         }
 
         let name = manifest.name.lowercased()
@@ -72,8 +72,8 @@ public enum McpbImporter {
         for (k, v) in config?.env ?? [:] { env[k] = resolve(v) }
 
         guard let command, !command.isEmpty else {
-            throw AgeOSError(.unsupported, "Bundle \(manifest.name) không khai báo server.mcp_config.command",
-                             remedy: "AgeOS MVP chỉ chạy .mcpb có mcp_config tường minh")
+            throw AgeOSError(.unsupported, "Bundle \(manifest.name) does not declare server.mcp_config.command",
+                             remedy: "The AgeOS MVP only runs .mcpb bundles with an explicit mcp_config")
         }
 
         return McpServerModel(
@@ -97,8 +97,8 @@ public enum McpbImporter {
         p.waitUntilExit()
         guard p.terminationStatus == 0 else {
             let msg = String(data: err.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            throw AgeOSError(.processFailed, "Giải nén .mcpb thất bại: \(msg.prefix(200))",
-                             remedy: "Kiểm tra file có phải ZIP hợp lệ (đuôi .mcpb)")
+            throw AgeOSError(.processFailed, "Unpacking the .mcpb failed: \(msg.prefix(200))",
+                             remedy: "Check that the file is a valid ZIP (.mcpb extension)")
         }
     }
 }

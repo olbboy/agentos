@@ -179,7 +179,7 @@ struct BudgetMeterTests {
             // (9 name + min(400,100) desc + 30 overhead) / 4 = 34 tokens
             #expect(report.skillTokens == (9 + 100 + 30) / 4)
             #expect(report.totalTokens > 30)
-            #expect(report.warnings.contains { $0.contains("vượt ngưỡng") })
+            #expect(report.warnings.contains { $0.contains("exceeds the") })
 
             // Không truncate (sym-agent): desc đủ 400.
             try makeSkillDir(in: world.agentRoot.appendingPathComponent("sym-agent/skills"),

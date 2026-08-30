@@ -15,8 +15,8 @@ public struct SourcesRegistry: Sendable {
             decoder.dateDecodingStrategy = .iso8601
             return try decoder.decode([SourceDescriptor].self, from: data)
         } catch {
-            throw AgeOSError(.configUnreadable, "sources.json hỏng: \(error)",
-                             remedy: "Sửa tay \(home.sourcesPath.path) hoặc xóa rồi add lại nguồn")
+            throw AgeOSError(.configUnreadable, "sources.json is malformed: \(error)",
+                             remedy: "Fix \(home.sourcesPath.path) by hand, or delete it and add the sources again")
         }
     }
 

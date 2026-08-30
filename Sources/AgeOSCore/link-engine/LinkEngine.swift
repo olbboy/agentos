@@ -41,19 +41,19 @@ public struct LinkEngine: Sendable {
                               project: URL?, modeOverride: AdapterSpec.LinkModeSpec?) throws -> TargetOutcome {
         let adapter = try adapters.adapter(id: adapterId)
         guard let skillsBlock = adapter.skills else {
-            throw AgeOSError(.unsupported, "Adapter '\(adapterId)' không hỗ trợ skills (mcp-only)",
-                             remedy: "Dùng adapter khác — xem `ageos targets list`")
+            throw AgeOSError(.unsupported, "Adapter '\(adapterId)' does not support skills (mcp-only)",
+                             remedy: "Use a different adapter — see `ageos targets list`")
         }
         guard let version = store.currentVersion(ref) else {
-            throw AgeOSError(.notFound, "Skill \(ref.id) chưa có trong store",
-                             remedy: "Chạy `ageos sync` trước khi enable")
+            throw AgeOSError(.notFound, "Skill \(ref.id) is not in the store yet",
+                             remedy: "Run `ageos sync` before enabling it")
         }
 
         var mode = modeOverride ?? adapter.effectiveSkillMode
         if mode == .symlink && !skillsBlock.folderSymlink {
             if modeOverride == .symlink {
-                throw AgeOSError(.unsupported, "Agent '\(adapterId)' không discover folder-symlink (đo thực nghiệm)",
-                                 remedy: "Bỏ --mode symlink để dùng copy mode")
+                throw AgeOSError(.unsupported, "Agent '\(adapterId)' does not discover folder symlinks (measured on a real machine)",
+                                 remedy: "Drop --mode symlink to use copy mode")
             }
             mode = .copy
         }
@@ -62,8 +62,8 @@ public struct LinkEngine: Sendable {
         let scope: String
         if let project {
             guard let projectPath = skillsBlock.projectPath else {
-                throw AgeOSError(.unsupported, "Adapter '\(adapterId)' không khai báo projectPath",
-                                 remedy: "Enable global (bỏ --project) hoặc bổ sung projectPath vào adapter JSON")
+                throw AgeOSError(.unsupported, "Adapter '\(adapterId)' declares no projectPath",
+                                 remedy: "Enable it globally (drop --project), or add projectPath to the adapter JSON")
             }
             destDir = project.appendingPathComponent(projectPath, isDirectory: true)
             scope = "project"
@@ -82,8 +82,8 @@ public struct LinkEngine: Sendable {
         let destExists = fm.fileExists(atPath: dest.path, isDirectory: &isDir)
             || (try? fm.destinationOfSymbolicLink(atPath: dest.path)) != nil
         if destExists && !isOurs(dest) {
-            throw AgeOSError(.conflict, "Đã tồn tại '\(ref.name)' tại \(destDir.path) KHÔNG do AgeOS quản lý",
-                             remedy: "Đổi tên/xóa bản thủ công đó nếu muốn AgeOS quản lý, hoặc giữ nguyên — AgeOS không ghi đè đồ user")
+            throw AgeOSError(.conflict, "'\(ref.name)' already exists at \(destDir.path) and is NOT managed by AgeOS",
+                             remedy: "Rename or delete that manual copy if you want AgeOS to manage it, or leave it — AgeOS never overwrites your own files")
         }
 
         try fm.createDirectory(at: destDir, withIntermediateDirectories: true)
@@ -105,7 +105,7 @@ public struct LinkEngine: Sendable {
         lock.skills[ref.id] = entry
         try lock.save(to: home.lockfilePath)
 
-        let note = skillsBlock.verified ? nil : "adapter '\(adapterId)' chưa verified trên máy thật — chạy `ageos doctor` sau khi thử"
+        let note = skillsBlock.verified ? nil : "adapter '\(adapterId)' is not yet verified on a real machine — run `ageos doctor` after trying it"
         return TargetOutcome(skillId: ref.id, adapterId: adapterId, scope: scope,
                              mode: mode.rawValue, path: dest.path, note: note)
     }
@@ -123,8 +123,8 @@ public struct LinkEngine: Sendable {
         let key = Lockfile.targetKey(adapter: adapterId, projectPath: project?.path)
 
         guard var entry = lock.skills[ref.id], let target = entry.targets[key] else {
-            throw AgeOSError(.notFound, "\(ref.id) chưa enable cho '\(key)' theo lockfile",
-                             remedy: "Xem trạng thái bằng `ageos doctor`; nếu file tồn tại ngoài lockfile thì đó là orphan — `ageos doctor --fix` sẽ dọn")
+            throw AgeOSError(.notFound, "\(ref.id) is not enabled for '\(key)' according to the lockfile",
+                             remedy: "Check the state with `ageos doctor`; a file that exists outside the lockfile is an orphan — `ageos doctor --fix` will clean it up")
         }
 
         let dest = URL(fileURLWithPath: target.path)
@@ -133,8 +133,8 @@ public struct LinkEngine: Sendable {
             || (try? fm.destinationOfSymbolicLink(atPath: dest.path)) != nil
         if destExists {
             guard isOurs(dest) else {
-                throw AgeOSError(.conflict, "File tại \(dest.path) không phải do AgeOS tạo — không gỡ",
-                                 remedy: "Kiểm tra thủ công; có thể user đã thay bản của AgeOS bằng bản riêng")
+                throw AgeOSError(.conflict, "The file at \(dest.path) was not created by AgeOS — not removing it",
+                                 remedy: "Check it by hand; the user may have replaced the AgeOS copy with their own")
             }
             try fm.removeItem(at: dest)
         }
@@ -149,7 +149,7 @@ public struct LinkEngine: Sendable {
 
         return TargetOutcome(skillId: ref.id, adapterId: adapterId,
                              scope: target.scope, mode: target.linkMode.rawValue, path: dest.path,
-                             note: destExists ? nil : "đích đã biến mất từ trước — chỉ dọn lockfile")
+                             note: destExists ? nil : "the destination was already gone — only cleaning the lockfile")
     }
 
     // MARK: - Version propagation (gọi sau sync đổi version)
@@ -184,11 +184,11 @@ public struct LinkEngine: Sendable {
                 // → tuyệt đối không re-copy đè (cùng lớp bug với isOurs hằng-đúng).
                 if FileManager.default.fileExists(atPath: dest.path),
                    CopySync.readManifest(at: dest) == nil {
-                    skipped.append("\(key): đích mất manifest AgeOS (user đã thay?) — bỏ qua, kiểm tra bằng `ageos doctor`")
+                    skipped.append("\(key): destination has no AgeOS manifest (replaced by the user?) — skipped, check with `ageos doctor`")
                     continue
                 }
                 if let drift = CopySync.drift(at: dest), !drift.isEmpty, !force {
-                    skipped.append("\(key): user đã sửa tay (\(drift.changed.count) đổi, \(drift.added.count) thêm, \(drift.missing.count) mất)")
+                    skipped.append("\(key): edited by hand (\(drift.changed.count) changed, \(drift.added.count) added, \(drift.missing.count) missing)")
                     continue
                 }
                 try CopySync.copy(from: store.currentLink(ref), to: dest, skillId: ref.id, version: newVersion)

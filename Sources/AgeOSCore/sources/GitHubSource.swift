@@ -26,8 +26,8 @@ public struct GitHubSource: SourceProvider {
         trimmed = trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let parts = trimmed.split(separator: "/").map(String.init)
         guard parts.count == 2, !parts[0].isEmpty, !parts[1].isEmpty else {
-            throw AgeOSError(.invalidSource, "URL GitHub không hợp lệ: '\(input)'",
-                             remedy: "Dạng chấp nhận: https://github.com/owner/repo hoặc owner/repo")
+            throw AgeOSError(.invalidSource, "Not a valid GitHub URL: '\(input)'",
+                             remedy: "Accepted forms: https://github.com/owner/repo or owner/repo")
         }
         let (owner, repo) = (parts[0].lowercased(), parts[1].lowercased())
         return SourceDescriptor(id: "gh/\(owner)/\(repo)", kind: .github,
@@ -75,13 +75,13 @@ public struct GitHubSource: SourceProvider {
             updated.license = meta!.license?.spdx_id
             updated.pushedAt = meta!.pushed_at
         case 403, 429:
-            throw AgeOSError(.rateLimited, "GitHub rate-limit khi gọi \(api.absoluteString)",
-                             remedy: "Đặt env GITHUB_TOKEN để nâng hạn mức (5000 req/h), hoặc thử lại sau")
+            throw AgeOSError(.rateLimited, "GitHub rate-limited the call to \(api.absoluteString)",
+                             remedy: "Set GITHUB_TOKEN to raise the limit (5000 req/h), or try again later")
         case 404:
-            throw AgeOSError(.notFound, "Repo không tồn tại hoặc private: \(ownerRepo)",
-                             remedy: "Kiểm tra URL; repo private cần GITHUB_TOKEN có quyền đọc")
+            throw AgeOSError(.notFound, "Repo does not exist, or is private: \(ownerRepo)",
+                             remedy: "Check the URL; a private repo needs a GITHUB_TOKEN with read access")
         default:
-            throw AgeOSError(.network, "GitHub API trả \(metaResp.statusCode) cho \(api.absoluteString)")
+            throw AgeOSError(.network, "GitHub API returned \(metaResp.statusCode) for \(api.absoluteString)")
         }
 
         let branch = meta?.default_branch ?? "HEAD"
@@ -91,7 +91,7 @@ public struct GitHubSource: SourceProvider {
         let (shaData, shaResp) = try await http.get(shaURL, headers: shaHeaders)
         guard shaResp.statusCode == 200, let sha = String(data: shaData, encoding: .utf8)?
             .trimmingCharacters(in: .whitespacesAndNewlines), !sha.isEmpty else {
-            throw AgeOSError(.network, "Không lấy được commit sha cho \(ownerRepo)@\(branch) (HTTP \(shaResp.statusCode))")
+            throw AgeOSError(.network, "Cannot resolve the commit sha for \(ownerRepo)@\(branch) (HTTP \(shaResp.statusCode))")
         }
         let version = String(sha.prefix(12))
 
@@ -103,7 +103,7 @@ public struct GitHubSource: SourceProvider {
         let tarURL = URL(string: "https://api.github.com/repos/\(ownerRepo)/tarball/\(sha)")!
         let (tarData, tarResp) = try await http.get(tarURL, headers: headers())
         guard tarResp.statusCode == 200 else {
-            throw AgeOSError(.network, "Tải tarball thất bại (HTTP \(tarResp.statusCode)) cho \(ownerRepo)@\(version)")
+            throw AgeOSError(.network, "Tarball download failed (HTTP \(tarResp.statusCode)) for \(ownerRepo)@\(version)")
         }
         let tarFile = staging.appendingPathComponent("src.tar.gz")
         try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)

@@ -60,8 +60,8 @@ public struct TomlConfigWriter: ConfigWriter {
         do {
             return try TOMLTable(string: text)
         } catch {
-            throw AgeOSError(.configUnreadable, "Config TOML hỏng sẵn tại \(file.path): \(error)",
-                             remedy: "Sửa tay file rồi chạy lại — AgeOS không ghi đè file hỏng")
+            throw AgeOSError(.configUnreadable, "Config TOML is already malformed at \(file.path): \(error)",
+                             remedy: "Fix the file by hand, then run again — AgeOS never overwrites a malformed file")
         }
     }
 
@@ -70,8 +70,8 @@ public struct TomlConfigWriter: ConfigWriter {
               let text = String(data: data, encoding: .utf8),
               text.contains("#") else { return }
         onWarning?("""
-        ⚠ \(file.lastPathComponent) chứa comment (#) — TOML sẽ được normalize khi ghi và \
-        comment có thể mất. Backup đầy đủ nằm trong ~/.ageos/backups/ (khôi phục: `ageos mcp restore-backup`).
+        ⚠ \(file.lastPathComponent) contains comments (#) — TOML is normalized on write and \
+        comments may be lost. A full backup is kept in ~/.ageos/backups/ (restore with `ageos mcp restore-backup`).
         """)
     }
 

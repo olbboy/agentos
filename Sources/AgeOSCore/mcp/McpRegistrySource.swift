@@ -86,8 +86,8 @@ public struct McpRegistrySource: Sendable {
         components.queryItems = [.init(name: "search", value: query), .init(name: "limit", value: "\(limit)")]
         let (data, response) = try await http.get(components.url!, headers: ["Accept": "application/json"])
         guard response.statusCode == 200 else {
-            throw AgeOSError(.network, "Registry MCP trả \(response.statusCode) khi search '\(query)'",
-                             remedy: "Thử lại sau; registry.modelcontextprotocol.io có thể đang bảo trì")
+            throw AgeOSError(.network, "The MCP registry returned \(response.statusCode) while searching '\(query)'",
+                             remedy: "Try again later; registry.modelcontextprotocol.io may be under maintenance")
         }
         try? cache(data: data, key: "search-\(query)")
         let decoded = try Self.decodeList(data)
@@ -109,13 +109,13 @@ public struct McpRegistrySource: Sendable {
             if let list = try? Self.decodeList(data), let first = list.first, let model = Self.model(from: first) {
                 return model
             }
-            throw AgeOSError(.unsupported, "Không hiểu payload registry cho '\(name)' (schema đổi?)",
-                             remedy: "Cập nhật AgeOS hoặc add tay: `ageos mcp add --manual ...`")
+            throw AgeOSError(.unsupported, "Unrecognized registry payload for '\(name)' (did the schema change?)",
+                             remedy: "Update AgeOS, or add it by hand: `ageos mcp add --manual ...`")
         case 404:
-            throw AgeOSError(.notFound, "Registry không có server '\(name)'",
-                             remedy: "Tìm bằng `ageos mcp search <từ khóa>` để lấy đúng tên namespace")
+            throw AgeOSError(.notFound, "The registry has no server named '\(name)'",
+                             remedy: "Search with `ageos mcp search <keyword>` to get the exact namespaced name")
         default:
-            throw AgeOSError(.network, "Registry MCP trả \(response.statusCode) cho '\(name)'")
+            throw AgeOSError(.network, "The MCP registry returned \(response.statusCode) for '\(name)'")
         }
     }
 
@@ -123,8 +123,8 @@ public struct McpRegistrySource: Sendable {
         do {
             return try JSONDecoder().decode(ListResponse.self, from: data).servers.map(\.server)
         } catch {
-            throw AgeOSError(.unsupported, "Không parse được danh sách registry: \(error)",
-                             remedy: "Schema registry có thể đã đổi — cập nhật AgeOS")
+            throw AgeOSError(.unsupported, "Cannot parse the registry listing: \(error)",
+                             remedy: "The registry schema may have changed — update AgeOS")
         }
     }
 

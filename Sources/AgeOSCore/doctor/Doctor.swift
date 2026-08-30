@@ -48,7 +48,7 @@ public struct Doctor: Sendable {
             if !storeOK {
                 findings.append(.init(kind: .storeMissing, skillId: skillId, targetKey: nil,
                                       path: store.skillDir(ref).path,
-                                      message: "Skill mất khỏi store nhưng lockfile còn — chạy `ageos sync` để tải lại",
+                                      message: "Skill is gone from the store but still in the lockfile — run `ageos sync` to fetch it again",
                                       fixable: false, fixed: false))
             }
 
@@ -59,7 +59,7 @@ public struct Doctor: Sendable {
                 let projectPath: String? = parts[1] == "global" ? nil : parts[1]
                 guard (try? adapters.adapter(id: adapterId)) != nil else {
                     findings.append(.init(kind: .adapterUnknown, skillId: skillId, targetKey: key, path: target.path,
-                                          message: "Adapter '\(adapterId)' không còn trong registry",
+                                          message: "Adapter '\(adapterId)' is no longer in the registry",
                                           fixable: false, fixed: false))
                     continue
                 }
@@ -78,11 +78,11 @@ public struct Doctor: Sendable {
                                                   modeOverride: target.linkMode == .symlink ? .symlink : .copy)
                             fixed = true
                         } catch {
-                            fixNote = " — fix THẤT BẠI: \(error)"
+                            fixNote = " — fix FAILED: \(error)"
                         }
                     }
                     findings.append(.init(kind: .missingTarget, skillId: skillId, targetKey: key, path: target.path,
-                                          message: "Đích enable biến mất" + (fixed ? " — đã tái tạo" : fixNote),
+                                          message: "The enable destination disappeared" + (fixed ? " — recreated" : fixNote),
                                           fixable: storeOK, fixed: fixed))
                     continue
                 }
@@ -104,11 +104,11 @@ public struct Doctor: Sendable {
                             resolved = dest.resolvingSymlinksInPath()
                         }
                         findings.append(.init(kind: .brokenLink, skillId: skillId, targetKey: key, path: target.path,
-                                              message: "Symlink gãy (đích không tồn tại)" + (fixed ? " — đã re-link" : ""),
+                                              message: "Broken symlink (destination does not exist)" + (fixed ? " — re-linked" : ""),
                                               fixable: storeOK, fixed: fixed))
                     } else if linkDestination == nil {
                         findings.append(.init(kind: .userShadow, skillId: skillId, targetKey: key, path: target.path,
-                                              message: "Lockfile ghi symlink nhưng trên đĩa là file/thư mục thường — có thể user đã thay",
+                                              message: "The lockfile records a symlink, but on disk it is a regular file or directory — the user may have replaced it",
                                               fixable: false, fixed: false))
                     }
                 case .copy:
@@ -121,16 +121,16 @@ public struct Doctor: Sendable {
                                                   skillId: skillId, version: entry.version)
                                 fixed = true
                             } catch {
-                                fixNote = " — fix THẤT BẠI: \(error)"
+                                fixNote = " — fix FAILED: \(error)"
                             }
                         }
-                        let detail = "đổi \(drift.changed.count), thêm \(drift.added.count), mất \(drift.missing.count) file"
+                        let detail = "\(drift.changed.count) changed, \(drift.added.count) added, \(drift.missing.count) missing files"
                         findings.append(.init(kind: .copyDrift, skillId: skillId, targetKey: key, path: target.path,
-                                              message: "Copy lệch manifest (\(detail))" + (fixed ? " — đã re-copy ĐÈ chỉnh sửa tay" : fixNote),
+                                              message: "Copy drifted from its manifest (\(detail))" + (fixed ? " — re-copied, OVERWRITING manual edits" : fixNote),
                                               fixable: storeOK, fixed: fixed))
                     } else if CopySync.readManifest(at: dest) == nil {
                         findings.append(.init(kind: .userShadow, skillId: skillId, targetKey: key, path: target.path,
-                                              message: "Thiếu .ageos-manifest.json — bản copy có thể đã bị thay thủ công",
+                                              message: "Missing .ageos-manifest.json — the copy may have been replaced by hand",
                                               fixable: false, fixed: false))
                     }
                 }
@@ -148,7 +148,7 @@ public struct Doctor: Sendable {
                                                             options: [.skipsHiddenFiles]) else {
                 if !fm.fileExists(atPath: dir.path) && lockReferencesAdapter(lock, adapter.id) {
                     findings.append(.init(kind: .agentPathMissing, skillId: nil, targetKey: nil, path: dir.path,
-                                          message: "Thư mục skills của '\(adapter.id)' biến mất dù lockfile còn entry",
+                                          message: "The skills directory for '\(adapter.id)' disappeared, but the lockfile still has entries",
                                           fixable: false, fixed: false))
                 }
                 continue
@@ -162,7 +162,7 @@ public struct Doctor: Sendable {
                         fixed = true
                     }
                     findings.append(.init(kind: .orphanFile, skillId: nil, targetKey: nil, path: entry.path,
-                                          message: "File AgeOS tạo nhưng lockfile không còn entry (orphan)" + (fixed ? " — đã gỡ" : ""),
+                                          message: "File created by AgeOS with no matching lockfile entry (orphan)" + (fixed ? " — removed" : ""),
                                           fixable: true, fixed: fixed))
                 }
             }

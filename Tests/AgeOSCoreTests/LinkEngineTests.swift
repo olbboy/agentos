@@ -197,7 +197,7 @@ struct LinkEngineTests {
             let linkEngine = LinkEngine(home: home, store: engine.store, adapters: try world.registry())
             let out = try linkEngine.enable(SkillRef(id: "local/src/json-only")!,
                                             sourceId: "local/src", adapterId: "brand-new-agent")
-            #expect(out.note?.contains("chưa verified") == true)
+            #expect(out.note?.contains("not yet verified") == true)
             #expect(FileManager.default.fileExists(atPath: newAgentDir.appendingPathComponent("json-only/SKILL.md").path))
         }
     }

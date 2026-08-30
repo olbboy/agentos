@@ -5,15 +5,15 @@ import Foundation
 struct TargetsCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "targets",
-        abstract: "Adapter khả dụng và trạng thái phát hiện trên máy.",
+        abstract: "Available adapters and what was detected on this machine.",
         subcommands: [List.self],
         defaultSubcommand: List.self
     )
 
     struct List: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Liệt kê adapter.")
+        static let configuration = CommandConfiguration(abstract: "List adapters.")
 
-        @Flag(name: .long, help: "Xuất JSON.")
+        @Flag(name: .long, help: "Emit JSON.")
         var json = false
 
         struct Row: Codable {
@@ -44,10 +44,10 @@ struct TargetsCommand: AsyncParsableCommand {
                         var caps: [String] = []
                         if r.skills { caps.append("skills(\(r.preferredMode ?? "?"))") }
                         if r.mcp { caps.append("mcp") }
-                        let verified = r.verified ? "" : " [chưa verified]"
+                        let verified = r.verified ? "" : " [not verified]"
                         print("\(mark) \(r.id) — \(r.displayName): \(caps.joined(separator: ", "))\(verified)")
                     }
-                    print("\n● = phát hiện trên máy này")
+                    print("\n● = detected on this machine")
                 }
             } catch { CLIRuntime.fail(error) }
         }
@@ -57,13 +57,13 @@ struct TargetsCommand: AsyncParsableCommand {
 struct DoctorCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "doctor",
-        abstract: "Khám drift lockfile ↔ filesystem; --fix để sửa."
+        abstract: "Find drift between the lockfile and the filesystem; --fix to repair."
     )
 
-    @Flag(name: .long, help: "Sửa các finding sửa được (re-link, re-copy, dọn orphan).")
+    @Flag(name: .long, help: "Repair the findings that can be repaired (re-link, re-copy, clean orphans).")
     var fix = false
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     func run() async throws {
@@ -75,17 +75,17 @@ struct DoctorCommand: AsyncParsableCommand {
             if json {
                 CLIRuntime.printJSON(findings)
             } else if findings.isEmpty {
-                print("✓ Không phát hiện vấn đề nào — lockfile khớp filesystem")
+                print("✓ No problems found — the lockfile matches the filesystem")
             } else {
                 for f in findings {
-                    let status = f.fixed ? "✔ FIXED" : (f.fixable ? "✗ (sửa được với --fix)" : "⚠")
+                    let status = f.fixed ? "✔ FIXED" : (f.fixable ? "✗ (repairable with --fix)" : "⚠")
                     print("\(status) [\(f.kind.rawValue)] \(f.skillId ?? "-") \(f.targetKey.map { "(\($0))" } ?? "")")
                     print("    \(f.path)")
                     print("    \(f.message)")
                 }
                 let fixable = findings.filter { $0.fixable && !$0.fixed }.count
                 if fixable > 0 && !fix {
-                    print("\n\(fixable) finding sửa được — chạy `ageos doctor --fix`")
+                    print("\n\(CLIRuntime.count(fixable, "repairable finding")) — run `ageos doctor --fix`")
                 }
             }
         } catch { CLIRuntime.fail(error) }

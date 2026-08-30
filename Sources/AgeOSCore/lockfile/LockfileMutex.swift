@@ -13,13 +13,13 @@ public enum LockfileMutex {
         let lockPath = home.root.appendingPathComponent(".ageos.flock").path
         let fd = open(lockPath, O_CREAT | O_RDWR, 0o644)
         guard fd >= 0 else {
-            throw AgeOSError(.storeCorrupt, "Không mở được lock file \(lockPath): \(String(cString: strerror(errno)))",
-                             remedy: "Kiểm tra quyền ghi thư mục \(home.root.path)")
+            throw AgeOSError(.storeCorrupt, "Cannot open lock file \(lockPath): \(String(cString: strerror(errno)))",
+                             remedy: "Check write permission on \(home.root.path)")
         }
         defer { close(fd) }
         guard flock(fd, LOCK_EX) == 0 else {
-            throw AgeOSError(.conflict, "Không lấy được khóa lockfile: \(String(cString: strerror(errno)))",
-                             remedy: "Một tiến trình ageos khác có thể đang kẹt — thử lại")
+            throw AgeOSError(.conflict, "Cannot acquire the lockfile lock: \(String(cString: strerror(errno)))",
+                             remedy: "Another ageos process may be stuck — try again")
         }
         defer { flock(fd, LOCK_UN) }
         return try body()

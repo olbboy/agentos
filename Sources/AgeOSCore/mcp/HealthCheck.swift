@@ -18,7 +18,7 @@ public enum HealthCheck {
     public static func run(_ launch: McpServerModel.Launch, timeout: TimeInterval = 15) -> Report {
         guard launch.transport == .stdio, let command = launch.command else {
             return Report(ok: false, latencyMs: 0, toolCount: 0, schemaTokens: 0,
-                          error: "MVP chỉ health-check transport stdio (server http bỏ qua)")
+                          error: "MVP only health-checks the stdio transport (http servers are skipped)")
         }
 
         let process = Process()
@@ -71,7 +71,7 @@ public enum HealthCheck {
             try process.run()
         } catch {
             return Report(ok: false, latencyMs: 0, toolCount: 0, schemaTokens: 0,
-                          error: "Không spawn được '\(command)': \(error)")
+                          error: "Cannot spawn '\(command)': \(error)")
         }
         let deadline = started.addingTimeInterval(timeout)
 
@@ -98,7 +98,7 @@ public enum HealthCheck {
             let tail = String(data: stderrBox.snapshot(), encoding: .utf8)?.suffix(300)
             return Report(ok: false, latencyMs: Int(Date().timeIntervalSince(started) * 1000),
                           toolCount: 0, schemaTokens: 0,
-                          error: "initialize không phản hồi trong \(Int(timeout))s hoặc trả lỗi",
+                          error: "initialize did not respond within \(Int(timeout))s, or returned an error",
                           stderrTail: tail.map(String.init))
         }
         let initLatency = Int(Date().timeIntervalSince(started) * 1000)
@@ -112,7 +112,7 @@ public enum HealthCheck {
               let tools = toolsResult["tools"] as? [[String: Any]] else {
             let tail = String(data: stderrBox.snapshot(), encoding: .utf8)?.suffix(300)
             return Report(ok: false, latencyMs: initLatency, toolCount: 0, schemaTokens: 0,
-                          serverInfo: serverInfo, error: "tools/list không phản hồi",
+                          serverInfo: serverInfo, error: "tools/list did not respond",
                           stderrTail: tail.map(String.init))
         }
         let schemaChars = (try? JSONSerialization.data(withJSONObject: tools))?.count ?? 0

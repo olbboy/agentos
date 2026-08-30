@@ -17,8 +17,8 @@ public enum TarballExtractor {
         process.waitUntilExit()
         guard process.terminationStatus == 0 else {
             let err = String(data: stderrPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            throw AgeOSError(.processFailed, "tar giải nén thất bại (exit \(process.terminationStatus)): \(err.prefix(200))",
-                             remedy: "File tải về có thể hỏng — chạy lại `ageos sync`")
+            throw AgeOSError(.processFailed, "tar extraction failed (exit \(process.terminationStatus)): \(err.prefix(200))",
+                             remedy: "The downloaded file may be corrupt — run `ageos sync` again")
         }
         let entries = try FileManager.default.contentsOfDirectory(at: destination, includingPropertiesForKeys: [.isDirectoryKey])
             .filter { $0.hasDirectoryPath }

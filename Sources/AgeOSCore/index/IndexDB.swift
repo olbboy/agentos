@@ -180,12 +180,12 @@ public struct IndexDB: Sendable {
         switch matches.count {
         case 1: return matches[0]
         case 0:
-            throw AgeOSError(.notFound, "Không tìm thấy skill '\(query)' trong index",
-                             remedy: "Chạy `ageos list` xem skill khả dụng, hoặc `ageos sync` để cập nhật")
+            throw AgeOSError(.notFound, "No skill matching '\(query)' in the index",
+                             remedy: "Run `ageos list` to see available skills, or `ageos sync` to refresh")
         default:
             let ids = matches.map(\.id).joined(separator: ", ")
-            throw AgeOSError(.conflict, "'\(query)' khớp nhiều skill: \(ids)",
-                             remedy: "Dùng id đầy đủ dạng <owner>/<repo>/<name>")
+            throw AgeOSError(.conflict, "'\(query)' matches several skills: \(ids)",
+                             remedy: "Use the full id in the form <owner>/<repo>/<name>")
         }
     }
 

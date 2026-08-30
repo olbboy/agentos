@@ -17,30 +17,30 @@ public enum SkillValidator {
         let m = skill.manifest
 
         if m.name.isEmpty {
-            issues.append(.init(severity: .error, message: "Thiếu field bắt buộc `name` trong frontmatter"))
+            issues.append(.init(severity: .error, message: "Missing required field `name` in the frontmatter"))
         } else {
             if m.name.range(of: namePattern, options: .regularExpression) == nil {
-                issues.append(.init(severity: .error, message: "`name` phải là hyphen-case ASCII (a-z, 0-9, -): '\(m.name)'"))
+                issues.append(.init(severity: .error, message: "`name` must be ASCII hyphen-case (a-z, 0-9, -): '\(m.name)'"))
             }
             if m.name.count > 64 {
-                issues.append(.init(severity: .error, message: "`name` dài \(m.name.count) > 64 ký tự"))
+                issues.append(.init(severity: .error, message: "`name` is \(m.name.count) characters, over the 64 limit"))
             }
             let dirName = skill.directory.lastPathComponent
             if !dirName.isEmpty, dirName != m.name {
-                issues.append(.init(severity: .warning, message: "Tên thư mục '\(dirName)' khác `name` '\(m.name)' — một số agent discovery theo tên thư mục"))
+                issues.append(.init(severity: .warning, message: "Directory name '\(dirName)' differs from `name` '\(m.name)' — some agents discover skills by directory name"))
             }
         }
 
         if m.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            issues.append(.init(severity: .error, message: "Thiếu field bắt buộc `description` trong frontmatter"))
+            issues.append(.init(severity: .error, message: "Missing required field `description` in the frontmatter"))
         } else if m.description.count > 1024 {
             // Warning chứ không error: agent thật (Claude Code) vẫn load skill vượt 1024
             // (vd anthropics/skills/claude-api = 1068 chars) — manager không được nghiêm hơn agent.
-            issues.append(.init(severity: .warning, message: "`description` dài \(m.description.count) > 1024 ký tự (spec agentskills.io) — cân nhắc rút gọn"))
+            issues.append(.init(severity: .warning, message: "`description` is \(m.description.count) characters, over the 1024 limit (agentskills.io spec) — consider shortening"))
         }
 
         if skill.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            issues.append(.init(severity: .warning, message: "Body SKILL.md rỗng — skill không có hướng dẫn gì cho agent"))
+            issues.append(.init(severity: .warning, message: "SKILL.md body is empty — the skill gives the agent no instructions"))
         }
 
         return issues
@@ -51,8 +51,8 @@ public enum SkillValidator {
         let errors = validate(skill).filter { $0.severity == .error }
         guard errors.isEmpty else {
             throw AgeOSError(.invalidSkill,
-                             "SKILL.md không hợp lệ (\(skill.directory.path)): " + errors.map(\.message).joined(separator: "; "),
-                             remedy: "Sửa frontmatter theo spec agentskills.io rồi sync lại")
+                             "Invalid SKILL.md (\(skill.directory.path)): " + errors.map(\.message).joined(separator: "; "),
+                             remedy: "Fix the frontmatter to match the agentskills.io spec, then sync again")
         }
     }
 }

@@ -6,7 +6,7 @@ import Foundation
 struct AgeosCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ageos",
-        abstract: "Quản lý & phân phối Agent Skills + MCP servers từ một library trung tâm.",
+        abstract: "Manage and distribute Agent Skills and MCP servers from one central library.",
         version: "0.1.0",
         subcommands: [SourceCommand.self, ListCommand.self, ReindexCommand.self,
                       EnableCommand.self, DisableCommand.self, TargetsCommand.self, DoctorCommand.self,
@@ -20,6 +20,15 @@ struct AgeosCommand: AsyncParsableCommand {
 enum CLIRuntime {
     static func makeEngine() throws -> SyncEngine {
         try SyncEngine(home: AgeOSHome())
+    }
+
+    /// "1 skill" / "2 skills" — tiếng Anh chia số nhiều, tiếng Việt thì không.
+    ///
+    /// Bản tiếng Việt viết "\(n) skill" cho mọi n và không sai. Dịch sang tiếng Anh
+    /// làm lộ ra vấn đề đó, nên nó thuộc về việc dịch cho xong, không phải việc thêm
+    /// tính năng. Gom vào một chỗ để 10 call site không mỗi chỗ một kiểu.
+    static func count(_ n: Int, _ singular: String, plural: String? = nil) -> String {
+        "\(n) \(n == 1 ? singular : (plural ?? singular + "s"))"
     }
 
     /// In lỗi chuẩn stderr rồi thoát mã 1.

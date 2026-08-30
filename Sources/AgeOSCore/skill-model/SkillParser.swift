@@ -8,11 +8,11 @@ public enum SkillParser {
     public static func parse(directory: URL) throws -> ParsedSkill {
         let file = directory.appendingPathComponent("SKILL.md")
         guard let data = FileManager.default.contents(atPath: file.path) else {
-            throw AgeOSError(.invalidSkill, "Không tìm thấy SKILL.md trong \(directory.path)",
-                             remedy: "Skill hợp lệ phải có file SKILL.md ở gốc thư mục (spec agentskills.io)")
+            throw AgeOSError(.invalidSkill, "No SKILL.md found in \(directory.path)",
+                             remedy: "A valid skill has a SKILL.md at the root of its directory (agentskills.io spec)")
         }
         guard let text = String(data: data, encoding: .utf8) else {
-            throw AgeOSError(.invalidSkill, "SKILL.md không phải UTF-8: \(file.path)")
+            throw AgeOSError(.invalidSkill, "SKILL.md is not UTF-8: \(file.path)")
         }
         return try parse(markdown: text, directory: directory)
     }
@@ -30,13 +30,13 @@ public enum SkillParser {
     static func splitFrontmatter(_ text: String, file: URL) throws -> (yaml: String, body: String) {
         let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
         guard normalized.hasPrefix("---\n") || normalized == "---" else {
-            throw AgeOSError(.invalidSkill, "SKILL.md thiếu YAML frontmatter: \(file.path)",
-                             remedy: "Mở đầu file bằng khối `---` chứa `name` và `description`")
+            throw AgeOSError(.invalidSkill, "SKILL.md has no YAML frontmatter: \(file.path)",
+                             remedy: "Open the file with a `---` block containing `name` and `description`")
         }
         let afterOpen = normalized.dropFirst(4)
         guard let closeRange = afterOpen.range(of: "\n---") else {
-            throw AgeOSError(.invalidSkill, "Frontmatter không đóng bằng `---`: \(file.path)",
-                             remedy: "Thêm dòng `---` kết thúc khối frontmatter")
+            throw AgeOSError(.invalidSkill, "Frontmatter is not closed by `---`: \(file.path)",
+                             remedy: "Add a `---` line to end the frontmatter block")
         }
         let yaml = String(afterOpen[..<closeRange.lowerBound])
         var body = String(afterOpen[closeRange.upperBound...])
@@ -53,11 +53,11 @@ public enum SkillParser {
         do {
             loaded = try Yams.load(yaml: yaml)
         } catch {
-            throw AgeOSError(.invalidSkill, "Frontmatter YAML hỏng trong \(file.path): \(error)",
-                             remedy: "Sửa cú pháp YAML (kiểm tra thụt lề, dấu hai chấm, dấu nháy)")
+            throw AgeOSError(.invalidSkill, "Frontmatter YAML is malformed in \(file.path): \(error)",
+                             remedy: "Fix the YAML syntax (check indentation, colons, and quotes)")
         }
         guard let dict = loaded as? [String: Any] else {
-            throw AgeOSError(.invalidSkill, "Frontmatter phải là mapping YAML (key: value): \(file.path)")
+            throw AgeOSError(.invalidSkill, "Frontmatter must be a YAML mapping (key: value): \(file.path)")
         }
 
         func str(_ key: String) -> String? {

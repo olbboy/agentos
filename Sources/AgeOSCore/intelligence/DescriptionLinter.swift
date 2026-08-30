@@ -25,11 +25,11 @@ public enum DescriptionLinter {
 
         if trimmed.count < 40 {
             findings.append(.init(rule: .tooShort,
-                                  message: "Description \(trimmed.count) ký tự — quá ngắn để agent phân biệt khi nào dùng (khuyến nghị ≥40)"))
+                                  message: "Description is \(trimmed.count) characters — too short for an agent to tell when to use it (recommend at least 40)"))
         }
         if trimmed.count > 1024 {
             findings.append(.init(rule: .tooLong,
-                                  message: "Description \(trimmed.count) ký tự > 1024 (spec) — một số agent sẽ cắt (codex cắt ~160)"))
+                                  message: "Description is \(trimmed.count) characters, over the 1024 spec limit — some agents truncate it (codex cuts at ~160)"))
         }
 
         let words = Set(trimmed.lowercased()
@@ -38,7 +38,7 @@ public enum DescriptionLinter {
         let meaningful = words.subtracting(vagueWords)
         if !words.isEmpty && meaningful.count < max(3, words.count / 4) {
             findings.append(.init(rule: .vagueOnly,
-                                  message: "Description toàn từ chung chung (\(words.intersection(vagueWords).sorted().joined(separator: ", "))) — nói rõ skill LÀM GÌ và KHI NÀO dùng"))
+                                  message: "Description is entirely generic wording (\(words.intersection(vagueWords).sorted().joined(separator: ", "))) — say WHAT the skill does and WHEN to use it"))
         }
 
         let lowered = trimmed.lowercased()
@@ -46,7 +46,7 @@ public enum DescriptionLinter {
             .contains { lowered.contains($0) }
         if !hasTrigger && trimmed.count >= 40 {
             findings.append(.init(rule: .noTriggerSignal,
-                                  message: "Không có tín hiệu trigger (\"Use when...\") — agent khó quyết định lúc nào kích hoạt"))
+                                  message: "No trigger signal (\"Use when...\") — the agent cannot tell when to activate it"))
         }
         return findings
     }

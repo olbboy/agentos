@@ -36,8 +36,8 @@ public struct SyncEngine: Sendable {
         let targets: [SourceDescriptor]
         if let sourceId {
             guard let found = sources.first(where: { $0.id == sourceId }) else {
-                throw AgeOSError(.notFound, "Nguồn '\(sourceId)' chưa được add",
-                                 remedy: "Xem `ageos source list`; add bằng `ageos source add <url|path>`")
+                throw AgeOSError(.notFound, "Source '\(sourceId)' has not been added",
+                                 remedy: "Run `ageos source list`; add one with `ageos source add <url|path>`")
             }
             targets = [found]
         } else {

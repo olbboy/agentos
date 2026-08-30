@@ -5,10 +5,10 @@ import Foundation
 struct ReindexCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "reindex",
-        abstract: "Rebuild index.sqlite từ filesystem (store + sources.json)."
+        abstract: "Rebuild index.sqlite from the filesystem (store + sources.json)."
     )
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     func run() async throws {
@@ -19,7 +19,7 @@ struct ReindexCommand: AsyncParsableCommand {
             if json {
                 CLIRuntime.printJSON(["skills": count])
             } else {
-                print("✓ Reindex xong — \(count) skill trong index")
+                print("✓ Reindex done — \(CLIRuntime.count(count, "skill")) in the index")
             }
         } catch { CLIRuntime.fail(error) }
     }

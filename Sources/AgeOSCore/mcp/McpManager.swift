@@ -30,13 +30,13 @@ public struct McpManager: Sendable {
     /// Resolve file config theo adapter + scope.
     func configFile(adapter: AdapterSpec, project: URL?) throws -> (file: URL, scope: String, mcp: AdapterSpec.McpBlock) {
         guard let mcp = adapter.mcp else {
-            throw AgeOSError(.unsupported, "Adapter '\(adapter.id)' không hỗ trợ MCP",
-                             remedy: "Xem `ageos targets list` — cột mcp")
+            throw AgeOSError(.unsupported, "Adapter '\(adapter.id)' does not support MCP",
+                             remedy: "See the mcp column in `ageos targets list`")
         }
         if let project {
             guard let projectConfig = mcp.projectConfigPath else {
-                throw AgeOSError(.unsupported, "Adapter '\(adapter.id)' không có config MCP scope project",
-                                 remedy: "Enable global (bỏ --project)")
+                throw AgeOSError(.unsupported, "Adapter '\(adapter.id)' has no project-scope MCP config",
+                                 remedy: "Enable it globally instead (drop --project)")
             }
             return (project.appendingPathComponent(projectConfig), "project", mcp)
         }
@@ -73,8 +73,8 @@ public struct McpManager: Sendable {
         let missing = model.missingRequiredEnv()
         guard missing.isEmpty else {
             let names = missing.map(\.name).joined(separator: ", ")
-            throw AgeOSError(.conflict, "Thiếu env bắt buộc cho \(model.id): \(names)",
-                             remedy: "Truyền qua --env \(missing[0].name)=<giá trị> (lặp lại cho từng biến)")
+            throw AgeOSError(.conflict, "Missing required env for \(model.id): \(names)",
+                             remedy: "Pass it with --env \(missing[0].name)=<value> (repeat for each variable)")
         }
 
         let writerImpl = writer(for: mcp.format)
@@ -82,8 +82,8 @@ public struct McpManager: Sendable {
         let key = Lockfile.targetKey(adapter: adapterId, projectPath: project?.path)
         let owned = lock.mcpServers[model.id]?.targets[key] != nil
         if try writerImpl.hasEntry(name: model.name, keyPath: mcp.keyPath, in: file) && !owned {
-            throw AgeOSError(.conflict, "Config \(file.lastPathComponent) đã có entry '\(model.name)' KHÔNG do AgeOS quản lý",
-                             remedy: "Đổi tên server (`ageos mcp add --manual`) hoặc gỡ entry tay đó nếu muốn AgeOS quản lý")
+            throw AgeOSError(.conflict, "Config \(file.lastPathComponent) already has an entry '\(model.name)' that AgeOS does NOT manage",
+                             remedy: "Rename the server (`ageos mcp add --manual`), or remove that entry by hand if you want AgeOS to manage it")
         }
 
         let backup = try ConfigBackup.backup(file, home: home)
@@ -101,7 +101,7 @@ public struct McpManager: Sendable {
 
         var note: String?
         if !model.sensitiveEnvKeys.isEmpty {
-            note = "env nhạy cảm (\(model.sensitiveEnvKeys.joined(separator: ", "))) đang ở PLAINTEXT trong config client — Keychain là milestone v1.1"
+            note = "sensitive env (\(model.sensitiveEnvKeys.joined(separator: ", "))) is stored in PLAINTEXT in the client config — Keychain storage is the v1.1 milestone"
         }
         return McpOutcome(serverId: model.id, entryName: model.name, adapterId: adapterId,
                           scope: scope, configPath: file.path, backupPath: backup?.path,
@@ -124,8 +124,8 @@ public struct McpManager: Sendable {
         var lock = try Lockfile.load(from: home.lockfilePath)
         let key = Lockfile.targetKey(adapter: adapterId, projectPath: project?.path)
         guard var entry = lock.mcpServers[model.id], entry.targets[key] != nil else {
-            throw AgeOSError(.notFound, "\(model.id) chưa enable cho '\(key)' theo lockfile",
-                             remedy: "Entry trong config nếu có là do user tự thêm — AgeOS không đụng")
+            throw AgeOSError(.notFound, "\(model.id) is not enabled for '\(key)' according to the lockfile",
+                             remedy: "Any entry in the config was added by you — AgeOS leaves it alone")
         }
 
         let backup = try ConfigBackup.backup(file, home: home)
@@ -153,8 +153,8 @@ public struct McpManager: Sendable {
         let lock = try Lockfile.load(from: home.lockfilePath)
         if let entry = lock.mcpServers[model.id], !entry.targets.isEmpty {
             let targets = entry.targets.keys.sorted().joined(separator: ", ")
-            throw AgeOSError(.conflict, "\(model.id) còn enabled ở: \(targets)",
-                             remedy: "Disable trước: `ageos mcp disable \(model.name) --target <adapter>` rồi remove lại")
+            throw AgeOSError(.conflict, "\(model.id) is still enabled on: \(targets)",
+                             remedy: "Disable it first with `ageos mcp disable \(model.name) --target <adapter>`, then remove it")
         }
         var all = try library.load()
         all.removeAll { $0.id == model.id }

@@ -23,8 +23,8 @@ public enum AtomicFile {
         guard rename(tmp.path, linkURL.path) == 0 else {
             let err = String(cString: strerror(errno))
             _ = try? FileManager.default.removeItem(at: tmp)
-            throw AgeOSError(.storeCorrupt, "Không thay được symlink \(linkURL.path): \(err)",
-                             remedy: "Kiểm tra quyền ghi thư mục \(dir.path)")
+            throw AgeOSError(.storeCorrupt, "Cannot replace symlink \(linkURL.path): \(err)",
+                             remedy: "Check write permission on \(dir.path)")
         }
     }
 

@@ -14,8 +14,8 @@ public struct LocalSource: SourceProvider {
         let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath).standardizedFileURL
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
-            throw AgeOSError(.invalidSource, "Thư mục không tồn tại: \(url.path)",
-                             remedy: "Kiểm tra path hoặc dùng URL GitHub cho nguồn remote")
+            throw AgeOSError(.invalidSource, "Directory does not exist: \(url.path)",
+                             remedy: "Check the path, or use a GitHub URL for a remote source")
         }
         let slug = url.lastPathComponent.lowercased()
             .replacingOccurrences(of: "[^a-z0-9-]", with: "-", options: .regularExpression)
@@ -25,8 +25,8 @@ public struct LocalSource: SourceProvider {
     public func fetch(staging: URL) async throws -> SourceFetchResult {
         let root = URL(fileURLWithPath: descriptor.location, isDirectory: true)
         guard FileManager.default.fileExists(atPath: root.path) else {
-            throw AgeOSError(.invalidSource, "Nguồn local biến mất: \(root.path)",
-                             remedy: "Khôi phục thư mục hoặc `ageos source remove \(descriptor.id)`")
+            throw AgeOSError(.invalidSource, "Local source disappeared: \(root.path)",
+                             remedy: "Restore the directory, or run `ageos source remove \(descriptor.id)`")
         }
         let scan = SkillScanner.scan(root: root)
         let version = contentHash(of: scan.skills)

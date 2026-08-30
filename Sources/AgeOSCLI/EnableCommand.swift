@@ -5,22 +5,22 @@ import Foundation
 struct EnableCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "enable",
-        abstract: "Enable skill cho một agent (symlink hoặc copy theo adapter)."
+        abstract: "Enable a skill for one agent (symlink or copy, per the adapter)."
     )
 
-    @Argument(help: "Skill id đầy đủ (owner/repo/name) hoặc tên ngắn nếu duy nhất.")
+    @Argument(help: "Full skill id (owner/repo/name), or the short name when it is unique.")
     var skill: String
 
-    @Option(name: .long, help: "Adapter id (vd claude-code, codex — xem `ageos targets list`).")
+    @Option(name: .long, help: "Adapter id (e.g. claude-code, codex — see `ageos targets list`).")
     var target: String
 
-    @Option(name: .long, help: "Path project để enable scope project thay vì global.")
+    @Option(name: .long, help: "Project path, to enable at project scope instead of globally.")
     var project: String?
 
-    @Option(name: .long, help: "Ép mode: symlink | copy (mặc định theo adapter).")
+    @Option(name: .long, help: "Force a mode: symlink | copy (defaults to the adapter's).")
     var mode: String?
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     func run() async throws {
@@ -28,13 +28,13 @@ struct EnableCommand: AsyncParsableCommand {
             let engine = try CLIRuntime.makeEngine()
             let row = try engine.index.resolveSkill(query: skill)
             guard let ref = SkillRef(id: row.id) else {
-                throw AgeOSError(.notFound, "Id skill không hợp lệ trong index: \(row.id)")
+                throw AgeOSError(.notFound, "Invalid skill id in the index: \(row.id)")
             }
             let adapters = try AdapterRegistry(home: engine.home)
             let linkEngine = LinkEngine(home: engine.home, store: engine.store, adapters: adapters)
             let modeOverride: AdapterSpec.LinkModeSpec? = try mode.map {
                 guard let m = AdapterSpec.LinkModeSpec(rawValue: $0) else {
-                    throw AgeOSError(.unsupported, "Mode '\($0)' không hợp lệ", remedy: "Dùng symlink hoặc copy")
+                    throw AgeOSError(.unsupported, "'\($0)' is not a valid mode", remedy: "Use symlink or copy")
                 }
                 return m
             }
@@ -47,7 +47,7 @@ struct EnableCommand: AsyncParsableCommand {
                 print("✓ \(outcome.skillId) → \(outcome.adapterId) [\(outcome.scope), \(outcome.mode)]")
                 print("  \(outcome.path)")
                 if let note = outcome.note { print("  ⚠ \(note)") }
-                if row.deprecated { print("  ⚠ skill đang bị đánh dấu deprecated") }
+                if row.deprecated { print("  ⚠ this skill is marked deprecated") }
             }
         } catch { CLIRuntime.fail(error) }
     }
@@ -56,19 +56,19 @@ struct EnableCommand: AsyncParsableCommand {
 struct DisableCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "disable",
-        abstract: "Gỡ skill khỏi một agent (chỉ gỡ thứ AgeOS đã tạo)."
+        abstract: "Remove a skill from one agent (only removes what AgeOS created)."
     )
 
-    @Argument(help: "Skill id hoặc tên ngắn.")
+    @Argument(help: "Skill id, or the short name.")
     var skill: String
 
     @Option(name: .long, help: "Adapter id.")
     var target: String
 
-    @Option(name: .long, help: "Path project nếu enable ở scope project.")
+    @Option(name: .long, help: "Project path, if it was enabled at project scope.")
     var project: String?
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     func run() async throws {
@@ -84,15 +84,15 @@ struct DisableCommand: AsyncParsableCommand {
                 switch matches.count {
                 case 1: id = matches[0]
                 case 0:
-                    throw AgeOSError(.notFound, "'\(skill)' không có trong lockfile",
-                                     remedy: "Xem `ageos doctor` để thấy trạng thái enable hiện tại")
+                    throw AgeOSError(.notFound, "'\(skill)' is not in the lockfile",
+                                     remedy: "Run `ageos doctor` to see the current enable state")
                 default:
-                    throw AgeOSError(.conflict, "'\(skill)' khớp nhiều: \(matches.sorted().joined(separator: ", "))",
-                                     remedy: "Dùng id đầy đủ")
+                    throw AgeOSError(.conflict, "'\(skill)' matches several: \(matches.sorted().joined(separator: ", "))",
+                                     remedy: "Use the full id")
                 }
             }
             guard let ref = SkillRef(id: id) else {
-                throw AgeOSError(.notFound, "Id không hợp lệ: \(id)")
+                throw AgeOSError(.notFound, "Invalid id: \(id)")
             }
             let adapters = try AdapterRegistry(home: engine.home)
             let linkEngine = LinkEngine(home: engine.home, store: engine.store, adapters: adapters)
@@ -101,7 +101,7 @@ struct DisableCommand: AsyncParsableCommand {
             if json {
                 CLIRuntime.printJSON(outcome)
             } else {
-                print("✓ Đã gỡ \(outcome.skillId) khỏi \(outcome.adapterId) [\(outcome.scope)]")
+                print("✓ Removed \(outcome.skillId) from \(outcome.adapterId) [\(outcome.scope)]")
                 if let note = outcome.note { print("  \(note)") }
             }
         } catch { CLIRuntime.fail(error) }

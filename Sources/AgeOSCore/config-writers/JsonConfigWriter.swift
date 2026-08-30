@@ -58,12 +58,12 @@ public struct JsonConfigWriter: ConfigWriter {
         } catch let error as NSError {
             // Chỉ chỗ lỗi để user tự sửa — TUYỆT ĐỐI không ghi đè file hỏng.
             let detail = (error.userInfo["NSDebugDescription"] as? String) ?? error.localizedDescription
-            throw AgeOSError(.configUnreadable, "Config JSON hỏng sẵn tại \(file.path): \(detail)",
-                             remedy: "Sửa tay file (kiểm tra dấu phẩy/ngoặc) rồi chạy lại — AgeOS không ghi đè file hỏng")
+            throw AgeOSError(.configUnreadable, "Config JSON is already malformed at \(file.path): \(detail)",
+                             remedy: "Fix the file by hand (check commas and braces), then run again — AgeOS never overwrites a malformed file")
         }
         guard let dict = parsed as? [String: Any] else {
-            throw AgeOSError(.configUnreadable, "Config \(file.path) không phải JSON object ở root",
-                             remedy: "File phải có dạng { ... } — kiểm tra lại nội dung")
+            throw AgeOSError(.configUnreadable, "Config \(file.path) is not a JSON object at the root",
+                             remedy: "The file must be shaped { ... } — check its contents")
         }
         return dict
     }

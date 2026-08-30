@@ -5,13 +5,13 @@ import Foundation
 struct AdoptCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "adopt",
-        abstract: "Inventory skill đang rải rác ở mọi agent; --import để gom vào library."
+        abstract: "Inventory the skills scattered across every agent; --import to gather them into the library."
     )
 
-    @Flag(name: .long, help: "Copy các skill user tự cài vào library (nguồn local/adopted).")
+    @Flag(name: .long, help: "Copy the skills you installed yourself into the library (local/adopted source).")
     var `import` = false
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     func run() async throws {
@@ -24,18 +24,18 @@ struct AdoptCommand: AsyncParsableCommand {
             if json && !`import` {
                 CLIRuntime.printJSON(inventory)
             } else {
-                print("Effective-load map (\(inventory.totalDistinctSkills) skill distinct, \(inventory.totalLoadEntries) load entries):\n")
+                print("Effective-load map (\(CLIRuntime.count(inventory.totalDistinctSkills, "distinct skill")), \(CLIRuntime.count(inventory.totalLoadEntries, "load entry", plural: "load entries"))):\n")
                 for agent in inventory.agents {
                     let managed = agent.entries.filter(\.managed).count
-                    print("● \(agent.adapterId): \(agent.entries.count) skill (\(managed) do AgeOS quản lý)")
+                    print("● \(agent.adapterId): \(CLIRuntime.count(agent.entries.count, "skill")) (\(managed) managed by AgeOS)")
                     for (name, paths) in agent.duplicated.sorted(by: { $0.key < $1.key }) {
-                        print("  ⚠ '\(name)' bị load từ \(paths.count) path:")
+                        print("  ⚠ '\(name)' is loaded from \(CLIRuntime.count(paths.count, "path")):")
                         for p in paths { print("      \(p)") }
                     }
                 }
                 let multiAgent = inventory.byName.filter { $0.value.count >= 2 }
                 if !multiAgent.isEmpty {
-                    print("\n\(multiAgent.count) skill xuất hiện ở ≥2 agent — gom về AgeOS để quản lý 1 chỗ:")
+                    print("\n\(CLIRuntime.count(multiAgent.count, "skill")) appear in 2 or more agents — gather them into AgeOS to manage them in one place:")
                     for (name, agentIds) in multiAgent.sorted(by: { $0.value.count > $1.value.count }).prefix(10) {
                         print("  \(name) → \(agentIds.sorted().joined(separator: ", "))")
                     }
@@ -47,10 +47,10 @@ struct AdoptCommand: AsyncParsableCommand {
                 if json {
                     CLIRuntime.printJSON(report)
                 } else {
-                    print("\n✓ Import \(report.imported.count) skill vào nguồn local/adopted (bỏ qua \(report.skippedManaged) bản do AgeOS quản lý)")
-                    for e in report.errors { print("  lỗi: \(e)") }
+                    print("\n✓ Imported \(CLIRuntime.count(report.imported.count, "skill")) into the local/adopted source (skipped \(report.skippedManaged) already managed by AgeOS)")
+                    for e in report.errors { print("  error: \(e)") }
                     if !report.imported.isEmpty {
-                        print("  Giờ enable qua AgeOS: ageos enable <tên> --target <agent>")
+                        print("  Now enable them through AgeOS: ageos enable <name> --target <agent>")
                     }
                 }
             }
@@ -61,13 +61,13 @@ struct AdoptCommand: AsyncParsableCommand {
 struct ScanCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "scan",
-        abstract: "Quét dupe (exact + near), deprecated, lint trên toàn bộ skill đang load."
+        abstract: "Scan every loaded skill for duplicates (exact + near), deprecation, and lint issues."
     )
 
-    @Option(name: .long, help: "Ngưỡng cosine near-dupe sau mean-centering (mặc định 0.72).")
+    @Option(name: .long, help: "Cosine threshold for near-duplicates after mean-centering (default 0.72).")
     var threshold: Double = 0.72
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     func run() async throws {
@@ -80,34 +80,34 @@ struct ScanCommand: AsyncParsableCommand {
             if json {
                 CLIRuntime.printJSON(report)
             } else {
-                print("Đã quét \(report.scannedSkills) skill (static-only, không execute gì)\n")
+                print("Scanned \(CLIRuntime.count(report.scannedSkills, "skill")) (static-only, nothing was executed)\n")
                 if !report.exactDupes.isEmpty {
-                    print("EXACT DUPE (\(report.exactDupes.count) cặp):")
+                    print("EXACT DUPLICATES (\(CLIRuntime.count(report.exactDupes.count, "pair"))):")
                     for p in report.exactDupes { print("  = \(p.a)\n    \(p.b)") }
                 }
                 if report.nearDupeAvailable {
                     if !report.nearDupes.isEmpty {
-                        print("\nNEAR DUPE (cosine ≥ \(threshold) sau centering):")
+                        print("\nNEAR DUPLICATES (cosine ≥ \(threshold) after centering):")
                         for p in report.nearDupes.prefix(15) {
                             print("  ≈ [\(String(format: "%.3f", p.score))] \(p.a)\n              \(p.b)")
                         }
                     }
                 } else {
-                    print("\n(near-dupe bỏ qua — máy thiếu embedding assets)")
+                    print("\n(near-duplicate detection skipped — this machine has no embedding assets)")
                 }
                 if !report.deprecated.isEmpty {
                     print("\nDEPRECATED (\(report.deprecated.count)):")
                     for d in report.deprecated { print("  ✝ \(d.id) — \(d.reason)") }
                 }
                 if !report.lintFindings.isEmpty {
-                    print("\nLINT (\(report.lintFindings.count) skill có vấn đề description):")
+                    print("\nLINT (\(CLIRuntime.count(report.lintFindings.count, "skill")) with description problems):")
                     for l in report.lintFindings.prefix(10) {
                         print("  ✎ \(l.id): \(l.findings.map(\.rule.rawValue).joined(separator: ", "))")
                     }
                 }
-                for n in report.notes { print("\nghi chú: \(n)") }
+                for n in report.notes { print("\nnote: \(n)") }
                 if report.exactDupes.isEmpty && report.nearDupes.isEmpty && report.deprecated.isEmpty {
-                    print("✓ Không dupe, không deprecated")
+                    print("✓ No duplicates, nothing deprecated")
                 }
             }
         } catch { CLIRuntime.fail(error) }
@@ -117,13 +117,13 @@ struct ScanCommand: AsyncParsableCommand {
 struct BudgetCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "budget",
-        abstract: "Ước lượng token catalog (skills + MCP schemas) mỗi agent gánh (±20%)."
+        abstract: "Estimate the catalog tokens (skills + MCP schemas) each agent carries (±20%)."
     )
 
-    @Option(name: .long, help: "Adapter id; bỏ trống = mọi adapter phát hiện được.")
+    @Option(name: .long, help: "Adapter id; leave empty for every detected adapter.")
     var target: String?
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     func run() async throws {
@@ -142,15 +142,15 @@ struct BudgetCommand: AsyncParsableCommand {
                 CLIRuntime.printJSON(reports)
             } else {
                 for r in reports {
-                    print("● \(r.adapterId): ≈\(r.totalTokens) tokens luôn-tải (ước lượng ±20%)")
+                    print("● \(r.adapterId): ≈\(r.totalTokens) always-loaded tokens (±20% estimate)")
                     print("    skills: \(r.skillCount) × … = ≈\(r.skillTokens) tokens")
                     for top in r.topSkills.prefix(5) { print("      \(top.name): ≈\(top.tokens)") }
-                    print("    mcp: \(r.mcpCount) server = ≈\(r.mcpTokens) tokens" +
-                          (r.mcpUnknownHealth.isEmpty ? "" : " (+\(r.mcpUnknownHealth.count) chưa đo)"))
+                    print("    mcp: \(CLIRuntime.count(r.mcpCount, "server")) = ≈\(r.mcpTokens) tokens" +
+                          (r.mcpUnknownHealth.isEmpty ? "" : " (+\(r.mcpUnknownHealth.count) not measured)"))
                     for w in r.warnings { print("    ⚠ \(w)") }
                     print("")
                 }
-                print("Đối chiếu thủ công: bật/tắt skill rồi so /context trong agent tương ứng.")
+                print("To check by hand: toggle a skill on and off, then compare /context in that agent.")
             }
         } catch { CLIRuntime.fail(error) }
     }
@@ -159,13 +159,13 @@ struct BudgetCommand: AsyncParsableCommand {
 struct LintCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "lint",
-        abstract: "Lint description + validate cấu trúc một skill."
+        abstract: "Lint the description and validate the structure of one skill."
     )
 
-    @Argument(help: "Skill id trong library, hoặc path thư mục skill.")
+    @Argument(help: "Skill id in the library, or a path to a skill folder.")
     var skill: String
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     struct Output: Codable {
@@ -200,17 +200,17 @@ struct LintCommand: AsyncParsableCommand {
             if json {
                 CLIRuntime.printJSON(output)
             } else {
-                print("\(id) — quality \(score.total)/100, phân loại: \(score.classification) [\(score.classificationMethod)]")
+                print("\(id) — quality \(score.total)/100, classified as: \(score.classification) [\(score.classificationMethod)]")
                 for c in score.explain { print("  \(c.name): \(c.points)/\(c.max) — \(c.note)") }
                 if !structural.isEmpty {
-                    print("\nCấu trúc:")
+                    print("\nStructure:")
                     for s in structural { print("  \(s)") }
                 }
                 if !lint.isEmpty {
                     print("\nDescription:")
                     for f in lint { print("  ✎ \(f.message)") }
                 } else {
-                    print("\n✓ Description sạch lint")
+                    print("\n✓ Description passes lint")
                 }
             }
         } catch { CLIRuntime.fail(error) }
@@ -220,13 +220,13 @@ struct LintCommand: AsyncParsableCommand {
 struct SearchCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "search",
-        abstract: "Tìm skill: library local + index skills.sh (install count)."
+        abstract: "Search for skills: your local library plus the skills.sh index (install counts)."
     )
 
-    @Argument(help: "Từ khóa.")
+    @Argument(help: "Keyword.")
     var query: String
 
-    @Flag(name: .long, help: "Xuất JSON.")
+    @Flag(name: .long, help: "Emit JSON.")
     var json = false
 
     func run() async throws {
@@ -255,9 +255,9 @@ struct SearchCommand: AsyncParsableCommand {
                     for h in remote.prefix(10) {
                         print("  \(h.id) — \(h.installs) installs")
                     }
-                    print("\nAdd nguồn: ageos source add https://github.com/<owner>/<repo>")
+                    print("\nAdd a source: ageos source add https://github.com/<owner>/<repo>")
                 } else if local.isEmpty {
-                    print("Không có kết quả cho '\(query)'")
+                    print("No results for '\(query)'")
                 }
             }
         } catch { CLIRuntime.fail(error) }

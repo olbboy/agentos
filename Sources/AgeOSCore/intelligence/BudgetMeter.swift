@@ -34,7 +34,11 @@ public struct BudgetMeter: Sendable {
 
     /// Chi phí catalog 1 skill với agent cụ thể: name + description (cắt theo adapter)
     /// + ~30 chars format bao quanh mỗi entry.
-    static func skillTokens(name: String, description: String, truncateChars: Int) -> Int {
+    ///
+    /// `public` có chủ ý: app SwiftUI hiện token ước tính cho từng dòng Library và
+    /// phải dùng LẠI đúng công thức này. Nhân bản công thức trong app là con đường
+    /// chắc chắn dẫn tới hai con số lệch nhau cho cùng một skill.
+    public static func skillTokens(name: String, description: String, truncateChars: Int) -> Int {
         let descChars = truncateChars > 0 ? min(description.count, truncateChars) : description.count
         return (name.count + descChars + 30) / 4
     }
@@ -58,7 +62,7 @@ public struct BudgetMeter: Sendable {
                                                               truncateChars: truncate)))
             }
             for (name, paths) in agent.duplicated.sorted(by: { $0.key < $1.key }) {
-                warnings.append("'\(name)' xuất hiện ở \(paths.count) path — chỉ 1 bản được load nhưng nên hợp nhất (xem `ageos scan`)")
+                warnings.append("'\(name)' appears at \(paths.count) paths — only one copy is loaded, but they should be merged (see `ageos scan`)")
             }
         }
         entries.sort { $0.tokens > $1.tokens }
@@ -80,13 +84,13 @@ public struct BudgetMeter: Sendable {
             }
         }
         if !unknownHealth.isEmpty {
-            warnings.append("Chưa có số đo schema cho \(unknownHealth.count) MCP server (\(unknownHealth.sorted().joined(separator: ", "))) — chạy `ageos mcp health <name>` để đo")
+            warnings.append("No schema measurement yet for \(unknownHealth.count) MCP server(s) (\(unknownHealth.sorted().joined(separator: ", "))) — run `ageos mcp health <name>` to measure")
         }
 
         let total = skillTokens + mcpTokens
         let threshold = adapter.budget?.catalogTokensWarn
         if let threshold, total > threshold {
-            warnings.append("Catalog ≈\(total) tokens vượt ngưỡng \(threshold) của \(adapterId) — nguy cơ loãng context/silent-drop; disable bớt hoặc chuyển scope project")
+            warnings.append("Catalog ≈\(total) tokens exceeds the \(threshold) threshold for \(adapterId) — risk of context dilution and silent drops; disable some entries or move them to project scope")
         }
 
         return Report(adapterId: adapterId, skillCount: entries.count, skillTokens: skillTokens,
