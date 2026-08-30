@@ -7,7 +7,7 @@ struct McpCommand: AsyncParsableCommand {
         commandName: "mcp",
         abstract: "Quản lý MCP servers: nguồn registry/.mcpb, enable per-client, health.",
         subcommands: [Add.self, Search.self, List.self, Enable.self, Disable.self,
-                      Health.self, RestoreBackup.self]
+                      Remove.self, Health.self, RestoreBackup.self]
     )
 
     static func makeManager(_ engine: SyncEngine) throws -> McpManager {
@@ -196,6 +196,29 @@ struct McpCommand: AsyncParsableCommand {
                 } else {
                     print("✓ Đã gỡ '\(outcome.entryName)' khỏi \(outcome.configPath)")
                     if let b = outcome.backupPath { print("  backup: \(b)") }
+                }
+            } catch { CLIRuntime.fail(error) }
+        }
+    }
+
+    struct Remove: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(abstract: "Gỡ server khỏi library (phải disable hết client trước).")
+
+        @Argument(help: "Server id hoặc tên ngắn.")
+        var server: String
+
+        @Flag(name: .long, help: "Xuất JSON.")
+        var json = false
+
+        func run() async throws {
+            do {
+                let engine = try CLIRuntime.makeEngine()
+                let manager = try McpCommand.makeManager(engine)
+                let removed = try manager.removeFromLibrary(query: server)
+                if json {
+                    CLIRuntime.printJSON(["removed": removed.id])
+                } else {
+                    print("✓ Đã gỡ \(removed.id) khỏi library (payload trong library/mcp nếu có vẫn giữ — GC ở version sau)")
                 }
             } catch { CLIRuntime.fail(error) }
         }

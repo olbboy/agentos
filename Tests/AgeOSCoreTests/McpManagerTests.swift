@@ -157,6 +157,32 @@ struct McpManagerTests {
         }
     }
 
+    @Test func removeFromLibraryGuardsEnabledServers() async throws {
+        try await withTempHome { home in
+            let world = try FakeMcpWorld.setUp(home: home)
+            let manager = try world.manager()
+            try manager.library.upsert(testModel)
+            _ = try manager.enable(query: "echo", adapterId: "json-b", envOverrides: ["API_KEY": "x"])
+
+            // Còn enabled → từ chối, entry giữ nguyên.
+            do {
+                _ = try manager.removeFromLibrary(query: "echo")
+                Issue.record("Phải chặn remove khi server còn enabled")
+            } catch let e as AgeOSError {
+                #expect(e.code == .conflict)
+                #expect(e.remedy?.contains("disable") == true)
+            }
+            #expect(try manager.library.load().count == 1)
+
+            // Disable xong → remove sạch.
+            _ = try manager.disable(query: "echo", adapterId: "json-b")
+            let removed = try manager.removeFromLibrary(query: "echo")
+            #expect(removed.id == "io.github.test/echo")
+            #expect(try manager.library.load().isEmpty)
+            #expect(throws: AgeOSError.self) { _ = try manager.library.find("echo") }
+        }
+    }
+
     @Test func backupAndRestoreRoundtrip() async throws {
         try await withTempHome { home in
             let world = try FakeMcpWorld.setUp(home: home)

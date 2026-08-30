@@ -144,6 +144,24 @@ public struct McpManager: Sendable {
                           sensitiveEnv: [], note: nil)
     }
 
+    // MARK: - Remove khỏi library
+
+    /// Gỡ hẳn model khỏi library. TỪ CHỐI khi server còn enabled ở bất kỳ client nào
+    /// (lockfile còn targets) — buộc disable trước để không mồ côi entry trong config client.
+    public func removeFromLibrary(query: String) throws -> McpServerModel {
+        let model = try library.find(query)
+        let lock = try Lockfile.load(from: home.lockfilePath)
+        if let entry = lock.mcpServers[model.id], !entry.targets.isEmpty {
+            let targets = entry.targets.keys.sorted().joined(separator: ", ")
+            throw AgeOSError(.conflict, "\(model.id) còn enabled ở: \(targets)",
+                             remedy: "Disable trước: `ageos mcp disable \(model.name) --target <adapter>` rồi remove lại")
+        }
+        var all = try library.load()
+        all.removeAll { $0.id == model.id }
+        try library.save(all)
+        return model
+    }
+
     // MARK: - Health
 
     public func health(query: String, timeout: TimeInterval = 15) throws -> HealthCheck.Report {
