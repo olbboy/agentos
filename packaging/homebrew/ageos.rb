@@ -15,8 +15,8 @@ cask "ageos" do
 
   # CLI đi kèm bản tarball riêng; hoặc lấy từ app bundle khi gộp về sau.
   caveats <<~EOS
-    Bản chưa ký Developer ID — nếu macOS chặn, chạy:
-      xattr -dr com.apple.quarantine "#{appdir}/AgeOS.app"
+    Bản chưa ký Developer ID — nếu macOS chặn khi mở, gỡ quarantine (macOS 26 bỏ cờ -r):
+      find "#{appdir}/AgeOS.app" -exec xattr -d com.apple.quarantine {} \; 2>/dev/null
     CLI: tải ageos-cli-v#{version}-arm64.tar.gz từ trang Releases.
   EOS
 end

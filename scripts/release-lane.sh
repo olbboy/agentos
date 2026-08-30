@@ -39,9 +39,10 @@ if [ -n "${AGEOS_SIGN_IDENTITY:-}" ]; then
   fi
 else
   cat >"$CLI_STAGE/README-UNSIGNED.txt" <<'EOF'
-Ban unsigned (chua co Developer ID). Sau khi tai ve, go quarantine:
-  xattr -dr com.apple.quarantine AgeOS.app
-  xattr -d  com.apple.quarantine ageos ageos-mcp
+Ban unsigned (chua co Developer ID). Sau khi tai ve, go quarantine
+(macOS 26 da bo co -r cua xattr):
+  find AgeOS.app -exec xattr -d com.apple.quarantine {} \; 2>/dev/null
+  xattr -d com.apple.quarantine ageos ageos-mcp
 EOF
   echo "  (bỏ qua — không có AGEOS_SIGN_IDENTITY; phát hành unsigned + note quarantine)"
 fi

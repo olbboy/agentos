@@ -17,7 +17,11 @@ Native Swift 6, macOS 26+. No Node, no Docker, no runtime.
 ## Quickstart (CLI)
 
 ```bash
-# Build & install (Homebrew cask coming with v0.1.0)
+# Homebrew (unsigned build — trust the tap once, strip quarantine if Gatekeeper blocks)
+brew trust olbboy/tap && brew tap olbboy/tap
+brew install --cask ageos
+
+# Or build from source
 swift build -c release
 mkdir -p ~/.ageos/bin && cp .build/release/ageos .build/release/ageos-mcp ~/.ageos/bin/
 export PATH="$HOME/.ageos/bin:$PATH"

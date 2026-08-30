@@ -36,9 +36,13 @@ TCC bootstrap (1 lần, persistent — chạy test từ automation/agent harness
 Sparkle appcast: HOÃN tới khi có Developer ID (Sparkle yêu cầu ký) — không block v0.1.0.
 
 ## Homebrew cask
-Template tại `packaging/homebrew/ageos.rb` — copy vào tap repo (`<owner>/homebrew-tap`), điền `version`, `sha256`, URL release. Chưa ký → user cần `--no-quarantine`:
+Cask tại `packaging/homebrew/ageos.rb`, đã publish lên `olbboy/homebrew-tap`. Học từ cài thật 30/8/2026 (Homebrew 2026 + macOS 26):
 ```bash
-brew install --cask <owner>/tap/ageos --no-quarantine
+brew trust olbboy/tap        # BẮT BUỘC: tap bên thứ ba phải trust trước (Tap-Trust mới)
+brew tap olbboy/tap
+brew install --cask ageos    # cờ --no-quarantine đã bị Homebrew gỡ bỏ
+# nếu Gatekeeper chặn khi mở (macOS 26 bỏ xattr -r):
+find /Applications/AgeOS.app -exec xattr -d com.apple.quarantine {} \; 2>/dev/null
 ```
 
 ## Publish checklist (cần quyết định user — CHƯA làm)
