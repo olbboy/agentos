@@ -81,7 +81,21 @@ cd apps/AgeOS && xcodegen generate # SwiftUI app
 xcodebuild -project AgeOS.xcodeproj -scheme AgeOS build
 ```
 
-Docs: [architecture](docs/system-architecture.md) · [codebase summary](docs/codebase-summary.md) · [deployment](docs/deployment-guide.md) · [PDR](docs/project-overview-pdr.md)
+After changing any user-facing string in the app, sync the String Catalog:
+
+```bash
+./scripts/sync-string-catalog.sh
+```
+
+Xcode merges extracted strings into `Localizable.xcstrings` on every IDE build;
+`xcodebuild` does not — it only emits `.stringsdata`. Without this step the
+catalog silently drifts, with no error and no warning.
+
+UI tests need Accessibility permission (System Settings → Privacy & Security →
+Accessibility) for whatever launches them — Xcode, or your terminal. Without it
+XCUITest sees no windows and every UI test fails with "no matches found".
+
+Docs: [architecture](docs/system-architecture.md) · [codebase summary](docs/codebase-summary.md) · [design guidelines](docs/design-guidelines.md) · [deployment](docs/deployment-guide.md) · [PDR](docs/project-overview-pdr.md)
 
 ## License
 
