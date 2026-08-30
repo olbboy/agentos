@@ -1,6 +1,6 @@
 # AgeOS — System Architecture
 
-## Tổng quan
+## Overview
 
 ```
 ┌─ SwiftUI app (apps/AgeOS) ─┐  ┌─ CLI ageos ─┐  ┌─ ageos-mcp (stdio) ─┐
@@ -11,37 +11,85 @@
    link-engine/ · doctor/ · mcp/ · config-writers/ · intelligence/
 ```
 
-**Filesystem là source of truth.** SQLite (`index.sqlite`, GRDB) chỉ là cache — `ageos reindex` rebuild từ FS. Lockfile `ageos.lock.json` nhớ version + nơi đã enable (targets: scope/linkMode/path).
+**The filesystem is the source of truth.** SQLite (`index.sqlite`, GRDB) is only
+a cache — `ageos reindex` rebuilds it from the filesystem. The lockfile
+`ageos.lock.json` remembers versions and where each thing was enabled (targets
+carry scope, linkMode and path).
 
-## Layout `~/.ageos/`
+## `~/.ageos/` layout
 ```
 library/skills/<ns>/<name>/<version>/ + current→   # ns = owner/repo | local/<slug>
-library/mcp/<ns>/<name>/<version>/                  # payload .mcpb
-adapters/          # user override (id trùng thắng bundled)
-backups/<ts-ms>/   # config client trước MỌI lần ghi
-adopted/           # skill import từ `ageos adopt --import`
-bin/               # ageos + ageos-mcp cài local
+library/mcp/<ns>/<name>/<version>/                  # .mcpb payload
+adapters/          # user override (a matching id beats the bundled spec)
+backups/<ts-ms>/   # the client config before EVERY write
+adopted/           # skills imported by `ageos adopt --import`
+bin/               # locally installed ageos + ageos-mcp
 index.sqlite · sources.json · ageos.lock.json · mcp-servers.json · cache/
 ```
 
-## Luồng chính
+## Main flows
 
-**Sync**: SourceProvider.fetch (GitHub tarball + ETag/sha, Local content-hash) → SkillScanner (`**/SKILL.md` ≤4 depth) → validate → Store.installVersion (atomic rename) → setCurrent (symlink swap atomic) → LinkEngine.propagateVersionChange (copy targets re-sync, tôn trọng drift) → Index upsert.
+**Sync**: `SourceProvider.fetch` (GitHub tarball with ETag/sha, local
+content-hash) → `SkillScanner` (`**/SKILL.md`, at most 4 levels deep) → validate
+→ `Store.installVersion` (atomic rename) → `setCurrent` (atomic symlink swap) →
+`LinkEngine.propagateVersionChange` (copy targets re-sync, drift respected) →
+index upsert.
 
-**Enable**: AdapterSpec quyết định mode. Symlink → link tới `library/.../current` (swap version lan tự động). Copy → CopySync + `.ageos-manifest.json` (sha256/file) + xattr `dev.ageos.managed`. Preflight: đích tồn tại mà không phải của mình → CHẶN.
+**Enable**: the `AdapterSpec` decides the mode. Symlink links to
+`library/.../current`, so a version swap propagates on its own. Copy runs
+`CopySync` plus `.ageos-manifest.json` (sha256 per file) and the
+`dev.ageos.managed` xattr. Preflight: if the destination exists and AgeOS did not
+create it, the operation is REFUSED.
 
-**MCP enable**: McpManager → ConfigWriter (Json giữ key lạ; Toml normalize + warn) sau khi ConfigBackup. Lockfile targets linkMode=`config`.
+**MCP enable**: `McpManager` → `ConfigWriter` (the JSON writer preserves unknown
+keys; the TOML writer normalizes and warns) after `ConfigBackup`. The lockfile
+records the target with `linkMode = config`.
 
-**Doctor**: đối chiếu lockfile ↔ FS (broken link, missing target, copy drift, orphan-marker, user-shadow, agent-path-missing) — `--fix` sửa loại sửa được, không bao giờ đụng đồ user.
+**Doctor**: compares the lockfile against the filesystem across eight finding
+kinds — `broken_link`, `missing_target`, `copy_drift`, `orphan_file`,
+`agent_path_missing`, `user_shadow`, `store_missing`, `adapter_unknown`. `--fix`
+repairs the ones that can be repaired and never touches files the user made.
+It is all-or-nothing: `Doctor.run(fix:)` takes no filter, so a caller cannot
+repair one finding in isolation.
 
-**Intelligence**: EffectiveLoadScanner (globalPath + compatPaths, kể cả plugin cache) → DedupeEngine (exact = hash chuẩn hóa; near = NLContextualEmbedding **mean-centered** cosine ≥0.72 — raw cosine vô dụng, spike proof) → QualityScorer (heuristic + explain; FM refine async khi Apple Intelligence bật) → BudgetMeter (4 bytes/token ±20%, MCP schema tokens từ health cache) → DescriptionLinter.
+**Intelligence**: `EffectiveLoadScanner` (globalPath plus compatPaths, including
+plugin caches) → `DedupeEngine` (exact = normalized hash; near =
+NLContextualEmbedding **mean-centered** cosine ≥ 0.72, because raw cosine is
+useless here — the spike proved it) → `QualityScorer` (heuristic plus an
+explanation; foundation-model refinement runs async when Apple Intelligence is
+available) → `BudgetMeter` (4 bytes per token, ±20%; MCP schema tokens come from
+the health cache) → `DescriptionLinter`.
 
-## Bất biến an toàn (test-enforced)
-1. Không ghi đè/xóa thứ AgeOS không tạo (lockfile + xattr/manifest double-check).
-2. Config client: parse-merge only, refuse file hỏng, backup mili-giây không bao giờ đè nhau.
-3. Scan static-only — không execute nội dung skill (booby-trap test).
-4. HealthCheck: SIGTERM→2s→SIGKILL, 0 process mồ côi (pgrep test).
-5. Mọi so sánh path qua `canonicalPath` (bẫy /var → /private/var).
+## Safety invariants (enforced by tests)
+1. Never overwrite or delete anything AgeOS did not create (lockfile plus an
+   xattr/manifest double-check).
+2. Client configs are parse-merged only; a malformed file is refused; the
+   millisecond-stamped backups can never collide.
+3. Scanning is static only — skill content is never executed (booby-trap test).
+4. HealthCheck escalates SIGTERM → 2s → SIGKILL, leaving zero orphaned processes
+   (verified with pgrep).
+5. Every path comparison goes through `canonicalPath` (the /var → /private/var
+   trap).
 
 ## Concurrency
-Swift 6 strict. Core = struct Sendable + value types; process/pipe wrappers là final class @unchecked Sendable có lock nội bộ (LineCollector, DataBox). App: AppModel @MainActor, việc nặng qua Task.detached.
+Swift 6 strict concurrency. Core is `Sendable` structs and value types; the
+process and pipe wrappers are `final class @unchecked Sendable` with their own
+internal locking (`LineCollector`, `DataBox`). In the app, `AppModel` is
+`@MainActor` and heavy work runs through `Task.detached`.
+
+## Presentation layer
+The app renders through a token layer rather than ad-hoc values: `Space`,
+`Radius`, `Stroke`, an `age`-prefixed type ramp, and ten semantic colors backed
+by an Asset Catalog. Each color set declares four appearance variants, so macOS
+resolves light, dark and Increase Contrast without any view branching on the
+environment.
+
+Five shared components (`StatTile`, `RatioMeter`, `StatusPill`, `SectionCard`,
+`FindingRow`) take their data through parameters and never read `AppModel`, which
+keeps them previewable and testable in isolation. Copy parameters are typed
+`LocalizedStringKey` so the String Catalog can extract them; data parameters take
+`String` through explicit `verbatim:` initialisers.
+
+Problem counts on every surface — Overview, Diagnostics, the menu bar — read one
+array built by `DiagnosticsBuilder`, so they cannot disagree about the state of
+the machine.

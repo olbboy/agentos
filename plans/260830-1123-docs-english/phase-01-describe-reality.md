@@ -62,12 +62,12 @@ nhanh. Bước 1 phải rà toàn bộ, không chỉ sửa 3 dòng này.
 
 ## Success Criteria
 
-- [ ] Hai file hoàn toàn tiếng Anh, cả hai tầng grep đều rỗng
-- [ ] Danh sách file trong `codebase-summary.md` khớp `find` thật, không còn
+- [x] Hai file hoàn toàn tiếng Anh, cả hai tầng grep đều rỗng
+- [x] Danh sách file trong `codebase-summary.md` khớp `find` thật, không còn
       `Scan`/`Adopt`
-- [ ] Mọi con số khớp output lệnh, ghi rõ lệnh nào cho ra số nào
-- [ ] Cấu trúc heading không đổi
-- [ ] Link nội bộ mở được
+- [x] Mọi con số khớp output lệnh, ghi rõ lệnh nào cho ra số nào
+- [x] Cấu trúc heading không đổi
+- [x] Link nội bộ mở được
 
 ## Risk Assessment
 

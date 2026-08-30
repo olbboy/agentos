@@ -1,29 +1,59 @@
 # AgeOS — Project Overview / PDR
 
 ## Problem
-Skills + MCP servers phân mảnh across agents (claude-code, codex, grok, antigravity, claude-desktop). Đo thực tế máy dev 30/8/2026: 169 skill distinct, 345 load entries, 147 skill nằm ≥2 agent, 18 cặp exact-dupe, claude-code gánh ≈10k tokens catalog luôn-tải. Không tool nào quản tập trung + đo chi phí context.
+Skills and MCP servers are fragmented across agents — claude-code, codex, grok,
+antigravity, claude-desktop. Measured on a real dev machine on 2026-08-30: 169
+distinct skills, 345 load entries, 147 skills present in two or more agents, 18
+exact-duplicate pairs, and claude-code carrying roughly 10k always-loaded catalog
+tokens. No tool manages that centrally, and none of them measures what it costs
+in context.
 
 ## Product
-Native macOS manager (Swift 6, macOS 26+): 1 library trung tâm `~/.ageos/` + adapter data-driven phân phối per-agent + intelligence (dupe/deprecated/quality/budget) + 3 surfaces (SwiftUI app, CLI `ageos`, MCP server `ageos-mcp`).
+A native macOS manager (Swift 6, macOS 26+): one central library at `~/.ageos/`,
+data-driven adapters that distribute per agent, intelligence over the result
+(duplicates, deprecation, quality, budget), and three surfaces — a SwiftUI app,
+the `ageos` CLI, and the `ageos-mcp` MCP server.
 
 ## Users
-Dev dùng ≥2 coding agent trên macOS; power users quản skills như dependencies.
+Developers running two or more coding agents on macOS, and power users who want
+to manage skills the way they manage dependencies.
 
 ## Differentiators
-1. Effective-load map — phơi hiện trạng thật (kể cả compat paths, plugin cache).
-2. Context Budget Meter per agent (±20%).
-3. Adapter = JSON → cộng đồng thêm agent không cần release.
-4. Safety invariants: không đụng đồ user, config parse-merge + backup, static-only scan.
+1. **Effective-load map** — shows what is actually loaded, including compat paths
+   and plugin caches.
+2. **Context Budget Meter** per agent (±20%).
+3. **Adapters are JSON**, so contributing a new agent needs a pull request, not a
+   release.
+4. **Safety invariants**: never touch what the user made, parse-merge configs
+   with a backup before every write, static-only scanning.
 
-## Decisions (chốt tại plan validate 30/8/2026)
-- OSS MIT · tên AgeOS (repo dir giữ `agentos`) · macOS 26+ (FoundationModels optional, keyword fallback là đường chính).
-- 6 adapter wave-1: claude-code, codex, grok, antigravity, claude-desktop, universal-agents.
-- TOML write: TOMLKit normalize + cảnh báo + backup (line-targeted editor = replan trigger nếu cộng đồng phản ứng).
-- Secrets MCP plaintext MVP, đánh dấu `sensitive`; Keychain = v1.1.
-- Codex preferredMode=copy (folder-symlink verified hoạt động 30/8 — flip là data update sau khi theo dõi openai/codex#8369).
+## Decisions (settled during plan validation, 2026-08-30)
+- MIT licensed. Named AgeOS; the repository directory stays `agentos`.
+- macOS 26+. FoundationModels is optional — the keyword fallback is the primary
+  path, not a degraded one.
+- Six wave-1 adapters: claude-code, codex, grok, antigravity, claude-desktop,
+  universal-agents.
+- TOML writes go through TOMLKit: normalize, warn, and back up. A line-targeted
+  editor is the replan trigger if the community pushes back.
+- MCP secrets are plaintext at MVP and flagged `sensitive`; Keychain storage is
+  the v1.1 milestone.
+- Codex uses `preferredMode = copy`. Folder symlinks were verified working on
+  2026-08-30, so flipping this is a data update once openai/codex#8369 settles.
 
 ## Status
-MVP code-complete (Phases 1–6), release lane chuẩn bị xong (Phase 7) — publish chờ quyết định user (repo public, tap, Developer ID). Chi tiết: `plans/260830-0405-ageos-mvp/`.
+v0.1.0 is published: tagged, released on GitHub, and available through the
+`olbboy/homebrew-tap` cask. The build is unsigned, so Gatekeeper needs the
+quarantine attribute stripped — see `deployment-guide.md`.
 
-## Roadmap sau v0.1.0
-Keychain secrets (v1.1) · FM classification refine · line-targeted TOML nếu cần · thêm adapter cộng đồng · Sparkle update (cần Developer ID).
+Since v0.1.0 the app has been through a UI redesign: a token layer with light,
+dark and high-contrast variants, five shared components, an Overview screen that
+has real content on first launch, Scan and Doctor merged into one Diagnostics
+screen ordered by severity, and every string in the app, core and CLI moved to
+English on a String Catalog.
+
+Detail: `plans/260830-0405-ageos-mvp/` and `plans/260830-0851-ageos-ui-redesign/`.
+
+## Roadmap after v0.1.0
+Keychain secrets (v1.1) · foundation-model classification refinement ·
+line-targeted TOML if it proves necessary · community adapters · Sparkle updates
+(needs a Developer ID).

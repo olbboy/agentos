@@ -1,7 +1,7 @@
 ---
 title: "docs/ sang tiếng Anh + sửa nội dung lỗi thời"
 description: "Dịch 4 file docs còn tiếng Việt sang tiếng Anh, đồng thời sửa những chỗ đã lệch so với code sau bản redesign UI. Không phải job dịch thuần — nội dung đang sai."
-status: pending
+status: completed
 priority: P2
 effort: "0.5d"
 tags: [ageos, docs, i18n]
@@ -42,8 +42,8 @@ thấy hơn, không phải trả nó.
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Mô tả hiện trạng](./phase-01-describe-reality.md) | Pending |
-| 2 | [Phase 2: Quy trình chạy được](./phase-02-verifiable-procedures.md) | Pending |
+| 1 | [Phase 1: Mô tả hiện trạng](./phase-01-describe-reality.md) | Done |
+| 2 | [Phase 2: Quy trình chạy được](./phase-02-verifiable-procedures.md) | Done |
 
 Ranh giới giữa hai phase là **cách kiểm chứng**, không phải kích thước:
 
@@ -77,20 +77,57 @@ Hai phase độc lập, làm song song được.
 
 ## Success Criteria
 
-- [ ] `grep -rn '[diacritics + CHỮ HOA]' docs/` không còn khớp trong 4 file
+- [x] `grep -rn '[diacritics + CHỮ HOA]' docs/` không còn khớp trong 4 file
       (dùng character class có **cả chữ hoa** — bản redesign đã vấp đúng lỗi
       character class chỉ có chữ thường và để sót `"fix THẤT BẠI"`)
-- [ ] Quét thêm tiếng Việt **không dấu** bằng danh sách từ vựng, không chỉ dựa
+- [x] Quét thêm tiếng Việt **không dấu** bằng danh sách từ vựng, không chỉ dựa
       vào dấu
-- [ ] `codebase-summary.md` liệt kê đúng tên file view hiện có, đối chiếu bằng
+- [x] `codebase-summary.md` liệt kê đúng tên file view hiện có, đối chiếu bằng
       `find apps/AgeOS/Sources -name '*.swift'`
-- [ ] Mọi con số test trong docs khớp output thật của `swift test` và
+- [x] Mọi con số test trong docs khớp output thật của `swift test` và
       `xcodebuild test`
-- [ ] Mọi lệnh trong `deployment-guide.md` đã được chạy hoặc ghi rõ lý do không
+- [x] Mọi lệnh trong `deployment-guide.md` đã được chạy hoặc ghi rõ lý do không
       chạy được (ví dụ cần credential phát hành)
-- [ ] Link trong README và CONTRIBUTING trỏ tới 4 file này vẫn mở được
-- [ ] `swift build && swift test` xanh (docs không đụng code, đây là kiểm tra
+- [x] Link trong README và CONTRIBUTING trỏ tới 4 file này vẫn mở được
+- [x] `swift build && swift test` xanh (docs không đụng code, đây là kiểm tra
       rằng đúng là không đụng)
+
+## Execution Log — 2026-08-30
+
+### Quyết định
+
+| # | Câu hỏi | Quyết định | Lý do |
+|---|---|---|---|
+| 1 | PDR: dịch hay viết lại? | **Dịch phần lớn, VIẾT LẠI mục Status** | Mọi mục khác chỉ sai ngôn ngữ. Riêng Status sai *nội dung*: nó ghi "publish chờ quyết định user" trong khi `git tag` + `gh release list` cho thấy v0.1.0 đã phát hành. Dịch một câu sai chỉ tạo ra câu sai trôi chảy hơn |
+| 2 | Bước phát hành một chiều | Không chạy, mô tả thành mục "Cutting the next release" | Tag/upload/cask là một chiều. Đối chiếu với `scripts/release-lane.sh` thay vì chạy thử |
+
+### Sai lệch tìm thêm ngoài danh sách scout
+
+Scout ban đầu tìm 4 chỗ. Rà kỹ ra thêm 4 chỗ nữa — cho thấy danh sách scout là
+điểm khởi đầu, không phải danh sách đầy đủ:
+
+| Chỗ | Đang ghi | Thực tế (lệnh kiểm) |
+|---|---|---|
+| `codebase-summary.md` | `Doctor (7 loại finding)` | **8** (`grep -c 'case .* = "' doctor/Doctor.swift`) |
+| `system-architecture.md` | liệt kê 6 loại finding | thiếu `store_missing`, `adapter_unknown` |
+| `deployment-guide.md` | "Publish checklist — CHƯA làm" | 4/5 mục đã xong (`git tag` → `v0.1.0`, `gh release list` → có) |
+| `project-overview-pdr.md` | "publish chờ quyết định user" | đã publish, cask có sha256 |
+
+### Lệnh đã chạy để lấy số liệu
+
+- `swift test` → 69 tests / 23 suites
+- `xcodebuild test -only-testing:AgeOSTests` → 24 tests / 5 suites + 3 XCTest
+- `ls apps/AgeOS/Sources/Views/` → 9 file, không còn `Scan`/`Adopt`
+- `grep -c` trên `Doctor.swift`, `AgeosMcpMain.swift`, `adapters/specs/` → 8 / 9 / 6
+- `git tag`, `gh release list` → v0.1.0 đã phát hành
+- `swift build -c release` → exit 0, 11.19s
+- `./scripts/generate-completions.sh` → exit 0, sinh 3 file completion
+
+### Chưa hoà giải
+
+`packaging/homebrew/ageos.rb` dòng 2 vẫn ghi `brew install --cask ageos --no-quarantine`,
+trong khi `deployment-guide.md` (và README) nói Homebrew đã gỡ cờ đó. Đây là file
+đóng gói, ngoài phạm vi 4 file docs — ghi lại để xử lý riêng.
 
 ## Open Questions
 

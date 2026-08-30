@@ -67,13 +67,13 @@ như bản dịch máy. Quyết định đó ghi vào plan, không tự làm im 
 
 ## Success Criteria
 
-- [ ] Hai file hoàn toàn tiếng Anh, cả hai tầng grep đều rỗng
-- [ ] Mọi lệnh build/test trong `deployment-guide.md` đã chạy, output khớp docs
-- [ ] Bước phát hành một chiều được đánh dấu rõ là chưa chạy, kèm lý do
-- [ ] Khác biệt giữa `deployment-guide.md` và `scripts/release-lane.sh` hoặc đã
+- [x] Hai file hoàn toàn tiếng Anh, cả hai tầng grep đều rỗng
+- [x] Mọi lệnh build/test trong `deployment-guide.md` đã chạy, output khớp docs
+- [x] Bước phát hành một chiều được đánh dấu rõ là chưa chạy, kèm lý do
+- [x] Khác biệt giữa `deployment-guide.md` và `scripts/release-lane.sh` hoặc đã
       được hoà giải, hoặc ghi rõ vì sao khác
-- [ ] Quyết định "dịch hay viết lại" PDR được ghi lại kèm lý do
-- [ ] Link từ README và CONTRIBUTING mở được
+- [x] Quyết định "dịch hay viết lại" PDR được ghi lại kèm lý do
+- [x] Link từ README và CONTRIBUTING mở được
 
 ## Risk Assessment
 
