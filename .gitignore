@@ -9,3 +9,4 @@ DerivedData/
 apps/AgeOS/AgeOS.xcodeproj/
 dist/
 completions/
+design/*.png

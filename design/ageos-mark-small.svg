@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>AgeOS mark, small sizes</title>
+  <!--
+    The 16pt and 32pt variant. Same idea and same silhouette family as
+    ageos-mark.svg — filled source, hollow agents, a directory tree — but drawn
+    with two leaves instead of three and much heavier strokes.
+
+    Why a separate file: at 16px the three-leaf master collapses. A leaf's hole is
+    90 - 26 = 64 units, which lands under one pixel, so the leaves smear into a
+    single vertical blur. Rendered here the hole is 150 - 80 = 70 units at a much
+    larger leaf, and the pitch is 300 rather than 140.
+
+    Keep the two files saying the same thing. If the master's concept changes,
+    change this one too.
+  -->
+  <defs>
+    <linearGradient id="fieldSmall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#25252F"/>
+      <stop offset="1" stop-color="#131318"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#fieldSmall)"/>
+
+  <g stroke="#FBFBFD" stroke-width="80" fill="none" stroke-linecap="butt">
+    <!-- spine runs to 805 = the bottom branch centre plus half a stroke, so the
+         lower-left corner closes cleanly instead of leaving a notch -->
+    <path d="M367 345 V805"/>
+    <path d="M367 465 H567"/>
+    <path d="M367 765 H567"/>
+    <rect x="567" y="390" width="150" height="150"/>
+    <rect x="567" y="690" width="150" height="150"/>
+  </g>
+
+  <rect x="267" y="145" width="200" height="200" fill="#A79EFF"/>
+</svg>

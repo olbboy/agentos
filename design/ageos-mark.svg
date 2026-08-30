@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>AgeOS mark</title>
+  <!--
+    One filled node branching into three identical hollow ones.
+
+    That is the product in one glyph: a single source in ~/.ageos appearing in every
+    agent's folder, and AgeOS owning only what it created. Filled = ours, hollow =
+    the agent's own territory — the same grammar StatusPill uses inside the app.
+
+    The shape is a directory tree, the thing this audience reads all day.
+
+    GEOMETRY IS LOAD-BEARING. Leaf pitch is 140 and a leaf's outer extent is
+    90 + 26 stroke = 116, which leaves a 24 gap. Shrink the pitch or fatten the
+    stroke and the three leaves fuse into one block — the first attempt did exactly
+    that and read as a barcode.
+
+    The source node is 110, not much larger than a 90 leaf. Drawn at 150 it carried
+    twice the optical weight of everything else and the mark tipped to one corner.
+  -->
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#25252F"/>
+      <stop offset="1" stop-color="#131318"/>
+    </linearGradient>
+  </defs>
+
+  <!-- macOS icon body: 824x824 inside a 1024 canvas, per the platform grid. -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#field)"/>
+
+  <g stroke="#FBFBFD" stroke-width="26" fill="none" stroke-linecap="butt">
+    <!-- Spine, descending out of the source node. It runs to 726, not 713: the
+         bottom branch is centred on 713 but only starts at x=413, so stopping the
+         spine at the centreline left a notch in its lower-left quarter. -->
+    <path d="M413 363 V726"/>
+    <!-- three branches, identical by construction -->
+    <path d="M413 433 H563"/>
+    <path d="M413 573 H563"/>
+    <path d="M413 713 H563"/>
+    <!-- the agents: hollow, because AgeOS does not own them -->
+    <rect x="563" y="388" width="90" height="90"/>
+    <rect x="563" y="528" width="90" height="90"/>
+    <rect x="563" y="668" width="90" height="90"/>
+  </g>
+
+  <!--
+    The one saturated element in the whole mark is the source of truth.
+    Uses the dark-field accent (#A79EFF, measured 8.11:1) rather than the
+    light-field one, because this sits on a dark field.
+  -->
+  <rect x="358" y="253" width="110" height="110" fill="#A79EFF"/>
+</svg>

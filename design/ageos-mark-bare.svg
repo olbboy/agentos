@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" width="560" height="560" color="#16161C">
+  <title>AgeOS mark, bare</title>
+  <!--
+    The same mark without the icon body, for a README or a page that supplies its
+    own background. Geometry is the icon's, shifted so the drawing starts at 0.
+
+    Two colour variants, both from the design tokens:
+      light background — ink #16161C strokes, accent #4A41C4 source node
+      dark background  — surface #FBFBFD strokes, accent #A79EFF source node
+    Swap `currentColor` and the accent below, or set `color` on the parent.
+
+    The stroke/pitch relationship is load-bearing; see ageos-mark.svg.
+  -->
+  <g fill="none" stroke="currentColor" stroke-width="26" stroke-linecap="butt">
+    <path d="M55 110 V473"/>
+    <path d="M55 180 H205"/>
+    <path d="M55 320 H205"/>
+    <path d="M55 460 H205"/>
+    <rect x="205" y="135" width="90" height="90"/>
+    <rect x="205" y="275" width="90" height="90"/>
+    <rect x="205" y="415" width="90" height="90"/>
+  </g>
+  <rect x="0" y="0" width="110" height="110" fill="#4A41C4"/>
+</svg>

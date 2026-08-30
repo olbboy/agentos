@@ -35,6 +35,7 @@ targets:
         # tương phản ở cả 4 chế độ (docs/design-guidelines.md); màu selection mặc
         # định thì chưa từng được đo.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: accentBrand
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Bắt buộc bật tay: project do xcodegen sinh KHÔNG thừa hưởng mặc định
         # của template Xcode. Thiếu hai dòng này thì Localizable.xcstrings sinh ra
         # rỗng, không lỗi, không cảnh báo. Đã đo bằng -showBuildSettings.
