@@ -22,12 +22,14 @@ struct AgeosMcpMain {
             do {
                 let text = try await AgeosTools.dispatch(name: params.name,
                                                          arguments: params.arguments ?? [:])
-                return CallTool.Result(content: [.text(text)])
+                return CallTool.Result(content: [.text(text: text, annotations: nil, _meta: nil)])
             } catch let error as AgeOSError {
-                return CallTool.Result(content: [.text("ERROR [\(error.code.rawValue)]: \(error.description)")],
+                return CallTool.Result(content: [.text(text: "ERROR [\(error.code.rawValue)]: \(error.description)",
+                                                       annotations: nil, _meta: nil)],
                                        isError: true)
             } catch {
-                return CallTool.Result(content: [.text("ERROR: \(error)")], isError: true)
+                return CallTool.Result(content: [.text(text: "ERROR: \(error)", annotations: nil, _meta: nil)],
+                                       isError: true)
             }
         }
 
